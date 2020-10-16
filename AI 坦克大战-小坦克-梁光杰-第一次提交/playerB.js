@@ -186,6 +186,13 @@ window.playerB = new (class PlayerControl {
     this.#fireEv = new CustomEvent('keydown')
     this.firetimestamp = new Date().valueOf()
     this.priority = this.#DIRECTION.STOP
+    this.grid = new Grid({
+      col: 11,
+      row: 7,
+    });
+    [[5, 2], [5, 3], [5, 4]].forEach(item => {
+      this.grid.set(item, 'value', 1);
+    });
   }
 
   land () {
@@ -234,59 +241,61 @@ window.playerB = new (class PlayerControl {
     const limitDis = 75 //极限距离，小于该距离必须朝最近方向躲避
     const SafeDis = 125 //在极限距离和安全距离间可以综合考虑后躲避
 
-    var lateEnemy = undefined //距离最近的敌人
-    var misDistanceOfEnemy = currentTankWH * 100
+    var lateEnemy = undefined //距离中心点最近的敌人
+    var MindisTank = undefined  //距离自身最近的敌人
+    var lateEnemyLeft = undefined
+    var lateEnemyRight = undefined
+    var MinTankdisLeft = 10000
+    var MinTankdisRight = 10000
+    var MinTankdis = 10000
     var secruitydistance = currentTankWH * 6
     var secruitylevel = enemyTanks.length
     var firedirectdis = 4
     var escapedir = 4
     var fight = 6
     var escapenum = 0
-
+    var CanAttack = [0, 0, 0, 0]
     for (const enemy of enemyTanks) {
       const dis = this.#calcTwoPointDistance(
+        cx,
+        cy,
+        enemy.X,
+        enemy.Y
+      )
+      const disself = this.#calcTwoPointDistance(
         currentTankX,
         currentTankY,
         enemy.X,
         enemy.Y
       )
-      if (misDistanceOfEnemy > dis) {
-        misDistanceOfEnemy = dis
-        lateEnemy = enemy
-      }
-    }
-    if (undefined != enemyTank) {
-      const enemydis = this.#calcTwoPointDistance(
+      var i = this.#sacnTank(enemy,
         currentTankX,
         currentTankY,
-        enemyTank.X,
-        enemyTank.Y
-      )
-      if (enemydis < misDistanceOfEnemy) {
-        lateEnemy = enemyTank
-        firedirectdis = 1
-        escapedir = 1
-        fight = 3
+        currentTankWH,
+        bulletWH)
+      if (i != this.#DIRECTION.STOP) {
+        if (CanAttack[i] == 0 || CanAttack[i] < disself)
+          CanAttack[i] = disself
+      }
+      if (MinTankdis > disself) {
+        MinTankdis = disself
+        MindisTank = enemy
+      }
+      if (enemy.X <= cx) {
+        if (MinTankdisLeft > dis) {
+          MinTankdisLeft = dis
+          lateEnemyLeft = enemy
+        }
+      } else {
+        if (MinTankdisRight > dis) {
+          MinTankdisRight = dis
+          lateEnemyRight = enemy
+        }
       }
     }
-    // 躲AI子弹
-    let Bullet = new Array(
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP,
-      this.#DIRECTION.STOP
-    )
-    let arrayBullets = aBulletCount.concat(eBullets)
-    arrayBullets = arrayBullets.concat(aTankCount)
+    lateEnemy = lateEnemyRight != undefined ? lateEnemyRight : lateEnemyLeft
+    let arrayBullets = aBulletCount/*.concat(eBullets)*/
+    //arrayBullets = arrayBullets.concat(aTankCount)
     var Bullets_is_close = new Array() //子弹是否远离坦克
     var Bullets_col_dis = new Array() //碰撞距离（用来判断子弹是否会碰上坦克）
     var Bullets_dis = new Array() //子弹运动方向和坦克的距离（判断威胁程度）
@@ -313,18 +322,53 @@ window.playerB = new (class PlayerControl {
       Bullets_col_dis,
       Bullets_dis,
       lateEnemy,
-      currentTankDirect
+      currentTankDirect,
+      CanAttack,
+      MindisTank
     )
+
+    /*moveDirection = this.#avoidBulletBt(
+      arrayBullets,
+      currentTankX,
+      currentTankY,
+      currentTankWH,
+      bulletWH,
+      limitDis,
+      SafeDis,
+      Bullets_is_close,
+      Bullets_col_dis,
+      Bullets_dis,
+      lateEnemy,
+      currentTankDirect
+    )*/
+
+    var t0 = performance.now();
+
+    let astar = new Astar(this.grid);
+    let path = astar.search(
+      [2, 3],                   // start
+      [8, 3],                   // end
+      {                        // option
+        rightAngle: true,    // default:false,Allow diagonal
+        optimalResult: false   // default:true,In a few cases, the speed is slightly slower
+      });
+
+    var t1 = performance.now();
+
+    //console.log('Took', (t1 - t0).toFixed(4), 'milliseconds to generate:', path.length);
+
     var c = new Date().valueOf()
-    if (c - this.firetimestamp > 250) {
-      this.firetimestamp = c
-      this.#fire()
-      document.onkeyup(this.#fireEv)
-    }
-    this.#move(moveDirection)
-    if (undefined != moveDirection) {
-      console.log(moveDirection)
-    }
+    if (moveDirection[1] == 1) {
+      if (c - this.firetimestamp > 100) {
+        this.firetimestamp = c
+        this.#fire()
+        document.onkeyup(this.#fireEv)
+      }
+    }else if (moveDirection[1] == 2) {
+             this.#fire()
+             document.onkeyup(this.#fireEv)
+        }
+    this.#move(moveDirection[0])
     this.#setName()
   }
 
@@ -424,8 +468,8 @@ window.playerB = new (class PlayerControl {
       }
     }
   }
-  //计算躲避子弹要移动的方向
-  #avoidBullet (
+
+  #avoidBulletBt (
     arrayBullets,
     currentTankX,
     currentTankY,
@@ -442,12 +486,192 @@ window.playerB = new (class PlayerControl {
     const centerTankX = currentTankX + currentTankWH / 2
     const centerTankY = currentTankY + currentTankWH / 2
     const col_dis = currentTankWH / 2 + bulletWH / 2
+    //var bt_desc = { "autolayout": true, "title": "avoidBullet", "fileversioncreate": "01.04", "nodes": [{ "sleep": false, "indexchild": 1, "func": "", "textwidth": 28, "levelindex": 1, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 96, "levelindex": 2, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 76, "levelindex": 3, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 75, "levelindex": 4, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "CanLoopBullet", "textwidth": 84, "levelindex": 5, "selected": false, "valid": true, "type": "Condition", "id": "node3", "width": 152, "y": 384, "x": -497.54084045493, "name": "CheckBulletLoop", "textlines": 3, "height": 50, "level": 5 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 100, "levelindex": 6, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsBulletFaraway", "textwidth": 80, "levelindex": 7, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "DoEmpty", "textwidth": 50, "levelindex": 8, "selected": false, "valid": true, "type": "Action", "id": "node7", "width": 78, "y": 576, "x": -174.54084045494, "name": "Empty", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Filter", "id": "node6", "width": 108, "y": 480, "x": -189.54084045494, "name": "Faraway", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "IsBulletInLimitDistance", "textwidth": 113, "levelindex": 9, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 51, "levelindex": 10, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "CalculatorShortestDirection", "textwidth": 137, "levelindex": 11, "selected": false, "valid": true, "type": "Action", "id": "node9", "width": 165, "y": 672, "x": -87.790840454937, "name": "LimitDistanceCalculator", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "SettingLimitDirection", "textwidth": 105, "levelindex": 12, "selected": false, "valid": true, "type": "Action", "id": "node11", "width": 133, "y": 672, "x": 138.70915954507, "name": "SettingLimitDirection", "textlines": 3, "height": 50, "level": 8 }], "valid": true, "type": "Sequence", "id": "node10", "width": 79, "y": 576, "x": 52.459159545066, "name": "LimitSeq", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Filter", "id": "node8", "width": 141, "y": 480, "x": 21.459159545066, "name": "InLimitDisatance", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "IsBulletInSafeDistance", "textwidth": 112, "levelindex": 13, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "CalculatorCloset", "textwidth": 83, "levelindex": 14, "selected": false, "valid": true, "type": "Action", "id": "node13", "width": 111, "y": 576, "x": 213.95915954507, "name": "CalcultaorCloset", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Filter", "id": "node12", "width": 140, "y": 480, "x": 199.45915954507, "name": "InSafeDistance", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 4, "sim": "", "func": "", "textwidth": 88, "levelindex": 15, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 112, "levelindex": 16, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsBulletDamaged", "textwidth": 108, "levelindex": 17, "selected": false, "valid": true, "type": "Condition", "id": "node16", "width": 176, "y": 672, "x": 367.45915954507, "name": "CheckBulletDamaged", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "CalculatorShortestDirection", "textwidth": 137, "levelindex": 18, "selected": false, "valid": true, "type": "Action", "id": "node17", "width": 165, "y": 672, "x": 596.45915954507, "name": "CalcultaorDirection", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "CalculatorDanByDirection", "textwidth": 128, "levelindex": 19, "selected": false, "valid": true, "type": "Action", "id": "node18", "width": 156, "y": 672, "x": 814.76377738922, "name": "CalculatorDan", "textlines": 3, "height": 50, "level": 8 }], "valid": true, "type": "Sequence", "id": "node14", "width": 140, "y": 576, "x": 599.11146846714, "name": "OtherBullectCheckSeq", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Succeeder", "id": "node15", "width": 116, "y": 480, "x": 611.11146846714, "name": "OtherBulletCheck", "textlines": 3, "height": 50, "level": 6 }], "valid": true, "type": "Selector", "id": "node4", "width": 128, "y": 384, "x": 204.7853140061, "name": "BulletCheckSelector", "textlines": 3, "height": 50, "level": 5 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "NextLoopBullet", "textwidth": 78, "levelindex": 20, "level": 5, "valid": true, "type": "Action", "id": "node40", "width": 106, "y": 384, "x": 371.0353140061, "name": "NextLoopBullet", "height": 50, "textlines": 3, "selected": true }], "valid": true, "type": "Sequence", "id": "node5", "width": 103, "y": 288, "x": -75.752763224413, "name": "BuilletLoopSeq", "textlines": 3, "height": 50, "level": 4 }], "valid": true, "type": "RepeatUntilFail", "id": "node2", "width": 104, "y": 192, "x": -76.252763224413, "name": "BulletLoop", "textlines": 3, "height": 50, "level": 3 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 75, "levelindex": 21, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsBulletLimitDirect", "textwidth": 91, "levelindex": 22, "selected": false, "valid": true, "type": "Condition", "id": "node20", "width": 159, "y": 288, "x": 752.79770121173, "name": "IsLimitDirect", "textlines": 3, "height": 50, "level": 4 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 96, "levelindex": 23, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 122, "levelindex": 24, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsMoveDirectionStop", "textwidth": 104, "levelindex": 25, "selected": false, "valid": true, "type": "Condition", "id": "node23", "width": 172, "y": 480, "x": 879.59573584326, "name": "IsMoveDirectionStop", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 54, "levelindex": 26, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 136, "levelindex": 27, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 96, "levelindex": 28, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsSetColDis", "textwidth": 59, "levelindex": 29, "selected": false, "valid": true, "type": "Condition", "id": "node29", "width": 127, "y": 768, "x": 890.11591158102, "name": "IsSetColDis", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "SetMoveDirectionByColDis", "textwidth": 134, "levelindex": 30, "selected": false, "valid": true, "type": "Action", "id": "node35", "width": 162, "y": 768, "x": 1059.3451957201, "name": "SetMoveDirectionByColDis", "textlines": 3, "height": 50, "level": 9 }], "valid": true, "type": "Sequence", "id": "node31", "width": 124, "y": 672, "x": 993.73055365056, "name": "CloseSetCheckSeq", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 83, "levelindex": 31, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 42, "levelindex": 32, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsSetColDis", "textwidth": 59, "levelindex": 33, "selected": false, "valid": true, "type": "Condition", "id": "node34", "width": 127, "y": 864, "x": 1216.4916602095, "name": "IsSetColDis", "textlines": 3, "height": 50, "level": 10 }], "valid": true, "type": "Inverter", "id": "node33", "width": 70, "y": 768, "x": 1244.9916602095, "name": "Inverter", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "CalculatorBoundaryDan", "textwidth": 119, "levelindex": 34, "selected": false, "valid": true, "type": "Action", "id": "node36", "width": 147, "y": 768, "x": 1335.1415761358, "name": "CalculatorBoundaryDan", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "SetMoveDirectionByMaxDan", "textwidth": 144, "levelindex": 35, "selected": false, "valid": true, "type": "Action", "id": "node37", "width": 172, "y": 768, "x": 1500.8615929505, "name": "SetMoveDirectionByMaxDan", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 4, "sim": "", "func": "IsMoveDirectionStop", "textwidth": 104, "levelindex": 36, "selected": false, "valid": true, "type": "Condition", "id": "node38", "width": 172, "y": 768, "x": 1722.1115929505, "name": "IsMoveDirectionStop", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 5, "sim": "", "func": "DoGogogo", "textwidth": 55, "levelindex": 37, "selected": false, "valid": true, "type": "Action", "id": "node39", "width": 83, "y": 768, "x": 1987.6115929505, "name": "DoGogogo", "textlines": 3, "height": 50, "level": 9 }], "valid": true, "type": "Sequence", "id": "node32", "width": 111, "y": 672, "x": 1602.30162658, "name": "ClosetCheckSeq", "textlines": 3, "height": 50, "level": 8 }], "valid": true, "type": "Selector", "id": "node27", "width": 164, "y": 576, "x": 1271.5160901153, "name": "MoveDirectionStopSelector", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Succeeder", "id": "node30", "width": 82, "y": 480, "x": 1312.5160901153, "name": "Succeeder", "textlines": 3, "height": 50, "level": 6 }], "valid": true, "type": "Sequence", "id": "node21", "width": 150, "y": 384, "x": 1062.0559129793, "name": "MoveDirectionCheckSeq", "textlines": 3, "height": 50, "level": 5 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 122, "levelindex": 38, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 42, "levelindex": 39, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsMoveDirectionStop", "textwidth": 104, "levelindex": 40, "selected": false, "valid": true, "type": "Condition", "id": "node26", "width": 172, "y": 576, "x": 1483.9632791816, "name": "IsMoveDirectionStop", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Inverter", "id": "node25", "width": 70, "y": 480, "x": 1534.9632791816, "name": "Inverter", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "SetMoveDirectionByDan", "textwidth": 123, "levelindex": 41, "selected": false, "valid": true, "type": "Action", "id": "node28", "width": 151, "y": 480, "x": 1620.0061958082, "name": "SetMoveDirectionByDan", "textlines": 3, "height": 50, "level": 6 }], "valid": true, "type": "Sequence", "id": "node24", "width": 150, "y": 384, "x": 1577.9847374949, "name": "MoveDirectionCheckSeq", "textlines": 3, "height": 50, "level": 5 }], "valid": true, "type": "Selector", "id": "node22", "width": 124, "y": 288, "x": 1333.0203252371, "name": "LimitDirectSelector", "textlines": 3, "height": 50, "level": 4 }], "valid": true, "type": "Sequence", "id": "node19", "width": 103, "y": 192, "x": 1053.2527632244, "name": "LimitDirectSeq", "textlines": 3, "height": 50, "level": 3 }], "valid": true, "type": "Selector", "id": "node1", "width": 124, "y": 96, "x": 478, "name": "avoidBulletSelector", "textlines": 3, "height": 50, "level": 2 }], "valid": true, "type": "Start", "id": "__start__", "width": 56, "y": 0, "x": 512, "name": "", "textlines": 3, "height": 50, "level": 1 }], "fileversionsave": "01.04", "notes": "" }
+    var bt_desc = { "autolayout": true, "title": "avoidBullet", "fileversioncreate": "01.04", "nodes": [{ "sleep": false, "indexchild": 1, "func": "", "textwidth": 28, "levelindex": 1, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 96, "levelindex": 2, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 76, "levelindex": 3, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 75, "levelindex": 4, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "CanLoopBullet", "textwidth": 84, "levelindex": 5, "selected": false, "valid": true, "type": "Condition", "id": "node3", "width": 152, "y": 384, "x": -501.27959612014, "name": "CheckBulletLoop", "textlines": 3, "height": 50, "level": 5 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 100, "levelindex": 6, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsBulletFaraway", "textwidth": 80, "levelindex": 7, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "DoEmpty", "textwidth": 50, "levelindex": 8, "selected": false, "valid": true, "type": "Action", "id": "node7", "width": 78, "y": 576, "x": -178.27959612015, "name": "Empty", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Filter", "id": "node6", "width": 108, "y": 480, "x": -193.27959612015, "name": "Faraway", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "IsBulletInLimitDistance", "textwidth": 113, "levelindex": 9, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 51, "levelindex": 10, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "CalculatorShortestDirection", "textwidth": 137, "levelindex": 11, "selected": false, "valid": true, "type": "Action", "id": "node9", "width": 165, "y": 672, "x": -91.529596120145, "name": "LimitDistanceCalculator", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "SettingLimitDirection", "textwidth": 105, "levelindex": 12, "selected": false, "valid": true, "type": "Action", "id": "node11", "width": 133, "y": 672, "x": 134.97040387986, "name": "SettingLimitDirection", "textlines": 3, "height": 50, "level": 8 }], "valid": true, "type": "Sequence", "id": "node10", "width": 79, "y": 576, "x": 48.720403879859, "name": "LimitSeq", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Filter", "id": "node8", "width": 141, "y": 480, "x": 17.720403879859, "name": "InLimitDisatance", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "IsBulletInSafeDistance", "textwidth": 112, "levelindex": 13, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "CalculatorCloset", "textwidth": 83, "levelindex": 14, "selected": false, "valid": true, "type": "Action", "id": "node13", "width": 111, "y": 576, "x": 210.22040387986, "name": "CalcultaorCloset", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Filter", "id": "node12", "width": 140, "y": 480, "x": 195.72040387986, "name": "InSafeDistance", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 4, "sim": "", "func": "", "textwidth": 88, "levelindex": 15, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 112, "levelindex": 16, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsBulletDamaged", "textwidth": 108, "levelindex": 17, "selected": false, "valid": true, "type": "Condition", "id": "node16", "width": 176, "y": 672, "x": 280.25392876291, "name": "CheckBulletDamaged", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "CalculatorShortestDirection", "textwidth": 137, "levelindex": 18, "selected": false, "valid": true, "type": "Action", "id": "node17", "width": 165, "y": 672, "x": 557.91504549617, "name": "CalcultaorDirection", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "CalculatorDanByDirection", "textwidth": 128, "levelindex": 19, "selected": false, "valid": true, "type": "Action", "id": "node18", "width": 156, "y": 672, "x": 739.820129585, "name": "CalculatorDan", "textlines": 3, "height": 50, "level": 8 }], "valid": true, "type": "Sequence", "id": "node14", "width": 140, "y": 576, "x": 518.03702917396, "name": "OtherBullectCheckSeq", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Succeeder", "id": "node15", "width": 116, "y": 480, "x": 530.03702917396, "name": "OtherBulletCheck", "textlines": 3, "height": 50, "level": 6 }], "valid": true, "type": "Selector", "id": "node4", "width": 128, "y": 384, "x": 162.3787165269, "name": "BulletCheckSelector", "textlines": 3, "height": 50, "level": 5 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "NextLoopBullet", "textwidth": 78, "levelindex": 20, "selected": false, "valid": true, "type": "Action", "id": "node40", "width": 106, "y": 384, "x": 367.29655834089, "name": "NextLoopBullet", "textlines": 3, "height": 50, "level": 5 }], "valid": true, "type": "Sequence", "id": "node5", "width": 103, "y": 288, "x": -65.491518889623, "name": "BuilletLoopSeq", "textlines": 3, "height": 50, "level": 4 }], "valid": true, "type": "RepeatUntilFail", "id": "node2", "width": 104, "y": 192, "x": -65.991518889623, "name": "BulletLoop", "textlines": 3, "height": 50, "level": 3 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 75, "levelindex": 21, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsBulletLimitDirect", "textwidth": 91, "levelindex": 22, "selected": false, "valid": true, "type": "Condition", "id": "node20", "width": 159, "y": 288, "x": 749.05894554652, "name": "IsLimitDirect", "textlines": 3, "height": 50, "level": 4 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 75, "levelindex": 23, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 54, "levelindex": 24, "selected": true, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 122, "levelindex": 25, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsMoveDirectionStop", "textwidth": 104, "levelindex": 26, "selected": false, "valid": true, "type": "Condition", "id": "node23", "width": 172, "y": 576, "x": 931.34221313104, "name": "IsMoveDirectionStop", "textlines": 3, "height": 50, "level": 7 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 136, "levelindex": 27, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 96, "levelindex": 28, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsSetColDis", "textwidth": 59, "levelindex": 29, "selected": false, "valid": true, "type": "Condition", "id": "node29", "width": 127, "y": 768, "x": 913.73290428127, "name": "IsSetColDis", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "SetMoveDirectionByColDis", "textwidth": 134, "levelindex": 30, "selected": false, "valid": true, "type": "Action", "id": "node35", "width": 162, "y": 768, "x": 1061.4267761776, "name": "SetMoveDirectionByColDis", "textlines": 3, "height": 50, "level": 9 }], "valid": true, "type": "Sequence", "id": "node31", "width": 124, "y": 672, "x": 1006.5798402294, "name": "CloseSetCheckSeq", "textlines": 3, "height": 50, "level": 8 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 83, "levelindex": 31, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 42, "levelindex": 32, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsSetColDis", "textwidth": 59, "levelindex": 33, "selected": false, "valid": true, "type": "Condition", "id": "node34", "width": 127, "y": 864, "x": 1212.7529045443, "name": "IsSetColDis", "textlines": 3, "height": 50, "level": 10 }], "valid": true, "type": "Inverter", "id": "node33", "width": 70, "y": 768, "x": 1241.2529045443, "name": "Inverter", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "CalculatorBoundaryDan", "textwidth": 119, "levelindex": 34, "selected": false, "valid": true, "type": "Action", "id": "node36", "width": 147, "y": 768, "x": 1367.9840111708, "name": "CalculatorBoundaryDan", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 3, "sim": "", "func": "SetMoveDirectionByMaxDan", "textwidth": 144, "levelindex": 35, "selected": false, "valid": true, "type": "Action", "id": "node37", "width": 172, "y": 768, "x": 1535.465880483, "name": "SetMoveDirectionByMaxDan", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 4, "sim": "", "func": "IsMoveDirectionStop", "textwidth": 104, "levelindex": 36, "selected": false, "valid": true, "type": "Condition", "id": "node38", "width": 172, "y": 768, "x": 1718.3728372853, "name": "IsMoveDirectionStop", "textlines": 3, "height": 50, "level": 9 }, { "sleep": false, "indexchild": 5, "sim": "", "func": "DoGogogo", "textwidth": 55, "levelindex": 37, "selected": false, "valid": true, "type": "Action", "id": "node39", "width": 83, "y": 768, "x": 1983.8728372853, "name": "DoGogogo", "textlines": 3, "height": 50, "level": 9 }], "valid": true, "type": "Sequence", "id": "node32", "width": 111, "y": 672, "x": 1598.5628709148, "name": "ClosetCheckSeq", "textlines": 3, "height": 50, "level": 8 }], "valid": true, "type": "Selector", "id": "node27", "width": 164, "y": 576, "x": 1276.0713555721, "name": "MoveDirectionStopSelector", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Sequence", "id": "node21", "width": 150, "y": 480, "x": 1110.7067843516, "name": "MoveDirectionCheckSeq", "textlines": 3, "height": 50, "level": 6 }], "valid": true, "type": "Succeeder", "id": "node30", "width": 82, "y": 384, "x": 1144.7067843516, "name": "Succeeder", "textlines": 3, "height": 50, "level": 5 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "", "textwidth": 122, "levelindex": 38, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "", "textwidth": 42, "levelindex": 39, "selected": false, "children": [{ "sleep": false, "indexchild": 1, "sim": "", "func": "IsMoveDirectionStop", "textwidth": 104, "levelindex": 40, "selected": false, "valid": true, "type": "Condition", "id": "node26", "width": 172, "y": 576, "x": 1488.0606256386, "name": "IsMoveDirectionStop", "textlines": 3, "height": 50, "level": 7 }], "valid": true, "type": "Inverter", "id": "node25", "width": 70, "y": 480, "x": 1539.0606256386, "name": "Inverter", "textlines": 3, "height": 50, "level": 6 }, { "sleep": false, "indexchild": 2, "sim": "", "func": "SetMoveDirectionByDan", "textwidth": 123, "levelindex": 41, "selected": false, "valid": true, "type": "Action", "id": "node28", "width": 151, "y": 480, "x": 1628.415285441, "name": "SetMoveDirectionByDan", "textlines": 3, "height": 50, "level": 6 }], "valid": true, "type": "Sequence", "id": "node24", "width": 150, "y": 384, "x": 1584.2379555398, "name": "MoveDirectionCheckSeq", "textlines": 3, "height": 50, "level": 5 }], "valid": true, "type": "Sequence", "id": "node22", "width": 103, "y": 288, "x": 1383.5046369556, "name": "LimitDirectSeq", "textlines": 3, "height": 50, "level": 4 }], "valid": true, "type": "Sequence", "id": "node19", "width": 103, "y": 192, "x": 1062.8450735663, "name": "LimitDirectSeq", "textlines": 3, "height": 50, "level": 3 }], "valid": true, "type": "Selector", "id": "node1", "width": 124, "y": 96, "x": 478, "name": "avoidBulletSelector", "textlines": 3, "height": 50, "level": 2 }], "valid": true, "type": "Start", "id": "__start__", "width": 56, "y": 0, "x": 512, "name": "", "textlines": 3, "height": 50, "level": 1 }], "fileversionsave": "01.04", "notes": "" }
+    var bt_realize = {
+      limitDirect: 0,//是否按最短路径躲避
+      moveDirection: this.#DIRECTION.STOP, // 躲避方向
+      closetColUDDis: 10000,
+      closetColRLDis: 10000,
+      Dan: {
+        UP: 0,
+        RIGHT: 0,
+        DOWN: 0,
+        LEFT: 0,
+      },
+      bulletPos: 0,
+      //BT里注册的函数列表
+      DoEmpty: function (context) { },
+      CanLoopBullet: function (context) { return this.bulletPos < arrayBullets.length },
+      NextLoopBullet: function (context) { this.bulletPos++; },
+      IsBulletFaraway: function (context) {
+        return (
+          !Bullets_is_close[this.bulletPos] &&
+          (Math.abs(Bullets_col_dis[this.bulletPos]) > col_dis + 7 ||
+            Math.abs(Bullets_dis[this.bulletPos]) > col_dis)
+        )
+      },
+      IsBulletInLimitDistance: function (context) {
+        return (
+          Bullets_is_close[this.bulletPos] &&
+          Math.abs(Bullets_col_dis[this.bulletPos]) <= col_dis &&
+          Math.abs(Bullets_dis[this.bulletPos]) <= limitDis
+        )
+      },
+      IsBulletInSafeDistance: function (context) {
+        return (
+          Bullets_is_close[this.bulletPos] &&
+          Math.abs(Bullets_col_dis[this.bulletPos]) <= col_dis &&
+          Math.abs(Bullets_dis[this.bulletPos]) > limitDis &&
+          Math.abs(Bullets_dis[this.bulletPos]) <= SafeDis
+        )
+      },
+      IsBulletDamaged: function (context) {
+        var dis = Math.sqrt(
+          Math.pow(Bullets_dis[this.bulletPos], 2) + Math.pow(Bullets_col_dis[this.bulletPos], 2)
+        )
+        if (dis < 177) {
+          return true
+        }
+        return false
+      },
+      IsBulletLimitDirect: function (context) {
+        return (this.limitDirect != 1)
+      },
+      IsMoveDirectionStop: function (context) {
+        return (this.moveDirection == context.#DIRECTION.STOP)
+      },
+      IsSetColDis: function (context) {
+        return (!(this.closetColRLDis == 10000 && this.closetColUDDis == 10000))
+      },
+      CalculatorShortestDirection: function (context) {
+        this.moveDirection = context.#getShortestDirecton(
+          arrayBullets[this.bulletPos].direction,
+          Bullets_is_close[this.bulletPos],
+          Bullets_col_dis[this.bulletPos],
+          Bullets_dis[this.bulletPos]
+        )
+      },
+      SettingLimitDirection: function (context) {
+        console.log('buxingle')
+        if (this.moveDirection <= 4) this.limitDirect = 1
+      },
+      CalculatorCloset: function (context) {
+        switch (arrayBullets[this.bulletPos].direction) {
+          case context.#DIRECTION.UP:
+          case context.#DIRECTION.DOWN:
+            this.closetColUDDis =
+              Math.abs(Bullets_dis[this.bulletPos]) < this.closetColUDDis
+                ? Math.abs(Bullets_dis[this.bulletPos])
+                : this.closetColUDDis
+            break
+          case context.#DIRECTION.LEFT:
+          case context.#DIRECTION.RIGHT:
+            this.closetColRLDis =
+              Math.abs(Bullets_dis[this.bulletPos]) < this.closetColRLDis
+                ? Math.abs(Bullets_dis[this.bulletPos])
+                : this.closetColRLDis
+            break
+        }
+      },
+      CalculatorDanByDirection: function (context) {
+        var dis = Math.sqrt(
+          Math.pow(Bullets_dis[this.bulletPos], 2) + Math.pow(Bullets_col_dis[this.bulletPos], 2)
+        )
+        var weight = Math.cos(((dis / 177) * Math.PI) / 2)
+        switch (this.moveDirection) {
+          case context.#DIRECTION.UP:
+            this.Dan.UP += weight
+            break
+          case context.#DIRECTION.DOWN:
+            this.Dan.DOWN += weight
+            break
+          case context.#DIRECTION.LEFT:
+            this.Dan.LEFT += weight
+            break
+          case context.#DIRECTION.RIGHT:
+            this.Dan.RIGHT += weight
+            break
+        }
+        this.moveDirection = context.#DIRECTION.STOP;
+      },
+      CalculatorBoundaryDan: function (context) {
+        context.#isNearBoundaryDan(
+          centerTankX,
+          centerTankY,
+          currentTankWH,
+          this.Dan,
+          10
+        )
+      },
+      SetMoveDirectionByDan: function (context) {
+        if (this.moveDirection == context.#DIRECTION.UP_OR_DOWN) {
+          this.moveDirection =
+            this.Dan.UP >= this.Dan.DOWN ? context.#DIRECTION.UP : context.#DIRECTION.DOWN
+        } else if (this.moveDirection == context.#DIRECTION.RIGHT_OR_LEFT) {
+          this.moveDirection =
+            this.Dan.RIGHT >= this.Dan.LEFT ? context.#DIRECTION.RIGHT : context.#DIRECTION.LEFT
+        }
+      },
+      SetMoveDirectionByColDis: function (context) {
+        if (this.closetColRLDis <= this.closetColUDDis) {
+          this.moveDirection = context.#DIRECTION.UP_OR_DOWN
+        } else this.moveDirection = context.#DIRECTION.RIGHT_OR_LEFT
+      },
+      SetMoveDirectionByMaxDan: function (context) {
+        this.moveDirection = context.#getMaxDan(this.Dan)
+      },
+      DoGogogo: function (context) {
+        this.moveDirection = context.#gogogo(
+          lateEnemy,
+          currentTankX,
+          currentTankY,
+          currentTankWH,
+          bulletWH,
+          currentTankDirect
+        )
+        console.log('进攻')
+      }
+    }
+    var BT = new Behaviac(bt_realize, this)
+    BT.run(bt_desc.nodes[0])
+    return bt_realize.moveDirection
+  }
+
+  //计算躲避子弹要移动的方向
+  #avoidBullet (
+    arrayBullets,
+    currentTankX,
+    currentTankY,
+    currentTankWH,
+    bulletWH,
+    limitDis,
+    SafeDis,
+    Bullets_is_close,
+    Bullets_col_dis,
+    Bullets_dis,
+    lateEnemy,
+    currentTankDirect,
+    CanAttack,
+    MindisTank
+  ) {
+    const centerTankX = currentTankX + currentTankWH / 2
+    const centerTankY = currentTankY + currentTankWH / 2
+    const col_dis = currentTankWH / 2 + bulletWH / 2
     var limitDirect = 0 //是否按最短路径躲避
     var moveDirection = this.#DIRECTION.STOP // 躲避方向
     var closetColUDDis = 10000
     var closetColRLDis = 10000
+    var attack = 0 //是否攻击
+    var TempDirection = 4
     //往各个方向躲避的系数
     var Dan = {
+      UP: 0,
+      RIGHT: 0,
+      DOWN: 0,
+      LEFT: 0,
+    }
+    var DanNearBa = {
       UP: 0,
       RIGHT: 0,
       DOWN: 0,
@@ -469,17 +693,17 @@ window.playerB = new (class PlayerControl {
       ) {
         //如果即将碰撞的子弹直线距离在极限距离以内，则按照最短路径方向躲避
         moveDirection = this.#getShortestDirecton(
-          arrayBullets,
-          i,
-          Bullets_is_close,
-          Bullets_col_dis,
-          Bullets_dis
+          Bullet.direction,
+          Bullets_is_close[i],
+          Bullets_col_dis[i],
+          Bullets_dis[i]
         )
+        console.log('buxingle')
         if (moveDirection <= 4) limitDirect = 1
       } else if (
         Bullets_is_close[i] &&
         Math.abs(Bullets_col_dis[i]) <= col_dis &&
-        Math.abs(Bullets_dis[i]) > limitDis &&
+        /*Math.abs(Bullets_dis[i]) > limitDis &&*/
         Math.abs(Bullets_dis[i]) <= SafeDis
       ) {
         //计算在安全距离内会发生碰撞的最近的子弹
@@ -506,11 +730,10 @@ window.playerB = new (class PlayerControl {
         )
         if (dis < 177) {
           const direction = this.#getShortestDirecton(
-            arrayBullets,
-            i,
-            Bullets_is_close,
-            Bullets_col_dis,
-            Bullets_dis
+            Bullet.direction,
+            Bullets_is_close[i],
+            Bullets_col_dis[i],
+            Bullets_dis[i]
           )
           var weight = Math.cos(((dis / 177) * Math.PI) / 2)
           switch (direction) {
@@ -542,12 +765,32 @@ window.playerB = new (class PlayerControl {
             centerTankX,
             centerTankY,
             currentTankWH,
-            Dan,
-            10
+            DanNearBa,
+            4
           )
-          moveDirection = this.#getMaxDan(Dan)
+          moveDirection = this.#getMaxDan(DanNearBa, Dan, 0.5)
+          // 判断距离最近的坦克保持距离
+          if (moveDirection == this.#DIRECTION.STOP) {
+            moveDirection = this.#leaveEne(
+              MindisTank,
+              currentTankX,
+              currentTankY,
+              Dan,
+              85
+            )
+          }
           if (moveDirection == this.#DIRECTION.STOP) {
             //如果没有威胁则进攻
+            var DanTemp = {
+              UP: 0,
+              DOWN: 0,
+              LEFT: 0,
+              RIGHT: 0,
+            }
+            DanTemp.UP = Dan.UP + DanNearBa.UP * 2
+            DanTemp.DOWN = Dan.DOWN + DanNearBa.DOWN * 2
+            DanTemp.LEFT = Dan.LEFT + DanNearBa.LEFT * 2
+            DanTemp.RIGHT = Dan.RIGHT + DanNearBa.RIGHT * 2
             moveDirection = this.#gogogo(
               lateEnemy,
               currentTankX,
@@ -555,8 +798,17 @@ window.playerB = new (class PlayerControl {
               currentTankWH,
               bulletWH,
               currentTankDirect,
-              177
+              177,
+              DanTemp
             )
+            console.log(Dan)
+            console.log(moveDirection)
+            if (moveDirection == this.#DIRECTION.STOP) {
+              if (currentTankDirect != TempDirection && this.#aggressiveCheck(Dan, TempDirection, 0.7) != this.#DIRECTION.STOP) {
+                moveDirection = TempDirection
+              }
+
+            }
             console.log('进攻')
           }
         }
@@ -571,7 +823,16 @@ window.playerB = new (class PlayerControl {
         }
       }
     }
-    return moveDirection
+  
+  if (CanAttack[currentTankDirect] != 0){
+    if(moveDirection==this.#DIRECTION.LEFT){
+  attack = 2      
+    }
+  attack = 1
+  }
+    console.log(CanAttack)
+    console.log(moveDirection)
+    return [moveDirection, attack]
   }
   // 根据玩家返回正确的方向keyCode
   #helpDirectionKeyCode (direction) {
@@ -608,57 +869,44 @@ window.playerB = new (class PlayerControl {
   }
   // TODO： 扫描轨道   预判走位  并给出开火和移动方向
   #scanner (currentTank) { }
-  // 判断是否快到边界了
-  #isNearBoundary (X = 0, Y = 0, currentDirection = undefined, currentTankWH) {
-    if (currentDirection !== undefined) {
-      if (
-        currentDirection === this.#DIRECTION.DOWN &&
-        Y + currentTankWH > screenY
-      ) {
-        return true
-      } else if (currentDirection === this.#DIRECTION.UP && Y < currentTankWH) {
-        return true
-      } else if (
-        currentDirection === this.#DIRECTION.LEFT &&
-        X < currentTankWH
-      ) {
-        return true
-      } else
-        return (
-          currentDirection === this.#DIRECTION.RIGHT &&
-          X + currentTankWH > screenX
-        )
-    }
-
-    return (
-      this.#isNearBoundary(X, Y, this.#DIRECTION.DOWN) ||
-      this.#isNearBoundary(X, Y, this.#DIRECTION.UP) ||
-      this.#isNearBoundary(X, Y, this.#DIRECTION.RIGHT) ||
-      this.#isNearBoundary(X, Y, this.#DIRECTION.LEFT)
-    )
-  }
   #isNearBoundaryDan (X, Y, currentTankWH, Dan, n) {
     const DisUP = screenY - Y
     const DisDOWN = Y
     const DisLEFT = screenX - X
     const DisRIGHT = X
-    Dan.UP +=
-      DisUP < screenY / n ? Math.cos(((DisUP / screenY) * n * Math.PI) / 2) : 0
+    let tanksnum = aTankCount.length
+    if (tanksnum < 10) n = (10 / tanksnum) * n
+    /*Dan.UP +=
+      DisUP < screenY / n ? Math.cos(((DisUP / screenY) * n * Math.PI) / 2) : 0*/
     Dan.DOWN +=
       DisDOWN < screenY / n
         ? Math.cos(((DisDOWN / screenY) * n * Math.PI) / 2)
         : 0
     Dan.LEFT +=
-      DisLEFT < screenX / n
-        ? Math.cos(((DisLEFT / screenX) * n * Math.PI) / 2)
+      DisLEFT < screenX / n / 4
+        ? Math.cos(((DisLEFT / screenX) * n * 4 * Math.PI) / 2)
         : 0
     Dan.RIGHT +=
-      DisRIGHT < screenX / n
-        ? Math.cos(((DisRIGHT / screenX) * n * Math.PI) / 2)
+      DisRIGHT < screenX / n / 4
+        ? Math.cos(((DisRIGHT / screenX) * n * 4 * Math.PI) / 2)
         : 0
   }
-  #collisionMetal (x, y, r) {
+  #collisionMetal (x, y, r, direction) {
     //障碍阻挡
+    switch (direction) {
+      case this.#DIRECTION.UP:
+        y -= 7
+        break
+      case this.#DIRECTION.DOWN:
+        y += 7
+        break
+      case this.#DIRECTION.LEFT:
+        x += 7
+        break
+      case this.#DIRECTION.RIGHT:
+        x -= 7
+        break
+    }
     const metal = ametal
     if (undefined != metal) {
       for (var i = 0; i < metal.length; i++) {
@@ -675,15 +923,12 @@ window.playerB = new (class PlayerControl {
     return false
   }
   #getShortestDirecton (
-    arrayBullets,
-    i,
-    Bullets_is_close,
-    Bullets_col_dis,
-    Bullets_dis
+    direction,
+    is_close,
+    col_dis,
+    dis
   ) {
-    //获取要躲避子弹i的最短路径方向
-    const direction = arrayBullets[i].direction
-    const col_dis = Bullets_col_dis[i]
+    //获取要躲避子弹i的最短路径方向    
     switch (direction) {
       case this.#DIRECTION.UP:
       case this.#DIRECTION.DOWN:
@@ -699,22 +944,27 @@ window.playerB = new (class PlayerControl {
         break
     }
   }
-  #getMaxDan (Dan) {
+  #getMaxDan (Dan, Danorigin, wight) {
     var temp = Dan.UP
     var num = this.#DIRECTION.UP
-    if (Dan.RIGHT > temp) {
+    if (Dan.RIGHT > temp && Danorigin.LEFT < wight && Dan.RIGHT > wight) {
       temp = Dan.RIGHT
       num = this.#DIRECTION.RIGHT
     }
-    if (Dan.DOWN > temp) {
+    if (Dan.DOWN > temp && Danorigin.UP < wight && Dan.DOWN > wight) {
       temp = Dan.DOWN
       num = this.#DIRECTION.DOWN
     }
-    if (Dan.LEFT > temp) {
+    if (Dan.LEFT > temp && Danorigin.RIGHT < wight && Dan.LEFT > wight) {
       temp = Dan.LEFT
       num = this.#DIRECTION.LEFT
     }
     if (temp == 0) return this.#DIRECTION.STOP
+    if (num == this.#DIRECTION.UP && Danorigin.DOWN < wight && Dan.UP > wight) {
+      return num
+    }
+    console.log("保守躲")
+    console.log(Dan, Danorigin)
     return num
   }
   #gogogo (
@@ -724,7 +974,8 @@ window.playerB = new (class PlayerControl {
     currentTankWH,
     bulletWH,
     currentTankDirect,
-    godis
+    godis,
+    Dan
   ) {
     if (lateEnemy == undefined) return this.#DIRECTION.STOP
     var disX = lateEnemy.X - currentTankX
@@ -733,30 +984,109 @@ window.playerB = new (class PlayerControl {
     var d1 = this.#DIRECTION.STOP
     var d2 = this.#DIRECTION.STOP
     if (Math.abs(disX) < col_dis) {
-      if (disY > 0 && Math.abs(disY) > godis) {
+      if (disY > 0 && (Math.abs(disY) > godis || currentTankDirect != this.#DIRECTION.DOWN)) {
         d1 = this.#DIRECTION.DOWN
-      } else if (disY <= 0 && Math.abs(disY) > godis)
+      } else if (disY <= 0 && (Math.abs(disY) > godis || currentTankDirect != this.#DIRECTION.UP))
         d1 = this.#DIRECTION.UP
     } else {
       if (disX < 0) d1 = this.#DIRECTION.LEFT
       else d1 = this.#DIRECTION.RIGHT
     }
     if (Math.abs(disY) < col_dis) {
-      if (disX < 0 && Math.abs(disX) > godis)
+      if (disX < 0 && (Math.abs(disX) > godis || currentTankDirect != this.#DIRECTION.LEFT))
         d2 = this.#DIRECTION.LEFT
-      else if (disX >= 0 && Math.abs(disX) > godis)
+      else if (disX >= 0 && (Math.abs(disX) > godis || currentTankDirect != this.#DIRECTION.RIGHT))
         d2 = this.#DIRECTION.RIGHT
     } else {
       if (disY < 0) d2 = this.#DIRECTION.UP
       else d2 = this.#DIRECTION.DOWN
     }
-    if (currentTankDirect != d1 && currentTankDirect != d2) {
-      if (Math.abs(disX) <= Math.abs(disY) && !this.#collisionMetal(currentTankX, currentTankY, currentTankWH, d1))
-        return d1
-      else return d2
+    d1 = this.#aggressiveCheck(Dan, d1, 0.7)
+    d2 = this.#aggressiveCheck(Dan, d2, 0.7)
+    if (d1 == this.#DIRECTION.STOP && Math.abs(disY) > godis) d1 = d2
+    if (d2 == this.#DIRECTION.STOP && Math.abs(disX) > godis) d2 = d1
+    // if (currentTankDirect != d1 && currentTankDirect != d2) {
+    if (this.#aggressiveCheck(Dan, d1, 0.5) == this.#DIRECTION.STOP) return d2
+    if (Math.abs(disX) <= Math.abs(disY) || this.#aggressiveCheck(Dan, d2, 0.5) == this.#DIRECTION.STOP)
+      return d1
+    else return d2
+    // }
+    // var items = [d1, d2]
+    // return items[Math.floor(Math.random() * items.length)];
+    // if (currentTankDirect == d1 && !this.#collisionMetal(currentTankX, currentTankY, currentTankWH, d2)) {
+    //   return d2
+    // } else return d1
+  }
+  #leaveEne (
+    lateEnemy,
+    currentTankX,
+    currentTankY,
+    Dan,
+    T2TSafeDis
+  ) {
+    let tanksnum = aTankCount.length
+    // T2TSafeDis = T2TSafeDis * tanksnum / 20
+    // if (T2TSafeDis < 60) T2TSafeDis = 60
+    var re = this.#DIRECTION.STOP
+    if (lateEnemy == undefined) return this.#DIRECTION.STOP
+    var disX = lateEnemy.X - currentTankX
+    var disY = lateEnemy.Y - currentTankY
+    if (Math.abs(disX) >= Math.abs(disY)) {
+      if (Math.abs(disX) < T2TSafeDis) {
+        if (disY > 0) re = this.#DIRECTION.UP
+        else re = this.#DIRECTION.DOWN
+      }
+    } else {
+      if (Math.abs(disY) < T2TSafeDis) {
+        if (disX > 0) re = this.#DIRECTION.LEFT
+        else re = this.#DIRECTION.RIGHT
+      }
     }
-    if (currentTankDirect == d1 && !this.#collisionMetal(currentTankX, currentTankY, currentTankWH, d2)) {
-      return d2
-    } else return d1
+
+    re = this.#aggressiveCheck(Dan, re, 0.5)
+    return re
+  }
+  #aggressiveCheck (
+    Dan,
+    direction,
+    weight
+  ) {
+    switch (direction) {
+      case this.#DIRECTION.UP:
+        if (Dan.DOWN > weight) return this.#DIRECTION.STOP
+      case this.#DIRECTION.DOWN:
+        if (Dan.UP > weight) return this.#DIRECTION.STOP
+      case this.#DIRECTION.LEFT:
+        if (Dan.RIGHT > weight) return this.#DIRECTION.STOP
+      case this.#DIRECTION.RIGHT:
+        if (Dan.LEFT > weight) return this.#DIRECTION.STOP
+      default:
+        return direction
+    }
+  }
+  #sacnTank (
+    Tank,
+    currentTankX,
+    currentTankY,
+    currentTankWH,
+    bulletWH,
+  ) {
+    if (Tank == undefined) return this.#DIRECTION.STOP
+    var disX = Tank.X - currentTankX
+    var disY = Tank.Y - currentTankY
+    var col_dis = currentTankWH / 2 + bulletWH / 2
+    if (Math.abs(disX) > col_dis && Math.abs(disY) > col_dis) {
+      return this.#DIRECTION.STOP
+    }
+    else if (Math.abs(disX) < col_dis) {
+      if (disY > 0) {
+        return this.#DIRECTION.DOWN
+      } else
+        return this.#DIRECTION.UP
+    } else {
+      if (disX < 0)
+        return this.#DIRECTION.LEFT
+      else return this.#DIRECTION.RIGHT
+    }
   }
 })('B')

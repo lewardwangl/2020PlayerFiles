@@ -66,7 +66,7 @@ window.playerB = new (class PlayerControl {
 
     var lateEnemy = undefined
     var misDistanceOfEnemy = currentTankWH * 100
-    var secruitydistance = currentTankWH * 6
+    var secruitydistance = currentTankWH * 8
     var secruitylevel = enemyTanks.length
     var firedirectdis = 4
     var escapedir = 4
@@ -168,7 +168,7 @@ window.playerB = new (class PlayerControl {
         }
         
         var c = (new Date()).valueOf()
-        if (c - this.firetimestamp > 500) {
+        if (c - this.firetimestamp > 100) {
           this.firetimestamp = c
           this.#fire();
           document.onkeyup(this.#fireEv);
@@ -449,10 +449,10 @@ window.playerB = new (class PlayerControl {
   #setName() {
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}barName`
-    ).value = `test2`;
+    ).value = `一轮游2`;
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}Name`
-    ).textContent = `test2`;
+    ).textContent = `一轮游2`;
   }
   // 控制移动   举例子：  向左移动： this.#move(this.#DIRECTION.LEFT)
   #move(direction) {
