@@ -56,7 +56,7 @@ window.playerB = new (class PlayerControl {
     // 中央逃逸点
     const cx = canvas.width/2;
     const cy = canvas.height/2
-    
+
     var closetTankAndCos = this.#getClosetTank(currentTankX, currentTankY, enemyTanks);
     closetTankAndCos[2] = 1
     var descision = this.#computeNetworkOutput(closetTankAndCos)
@@ -454,10 +454,10 @@ window.playerB = new (class PlayerControl {
   #setName() {
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}barName`
-    ).value = `test2`;
+    ).value = `glhf`;
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}Name`
-    ).textContent = `test2`;
+    ).textContent = `glhf`;
   }
   // 控制移动   举例子：  向左移动： this.#move(this.#DIRECTION.LEFT)
   #move(direction) {
