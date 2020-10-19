@@ -616,6 +616,12 @@ window.playerB = new (class PlayerControl {
       }
     }
     var res = new Array()
+
+    if(minDistanchTank == undefined){
+      res[0] = 0
+      res[1] = 0
+      return res
+    }
     res[0] = minDistance
     res[1] = Math.cos(Math.atan((minDistanchTank.Y - y) / (minDistanchTank.X - x)))
     return res

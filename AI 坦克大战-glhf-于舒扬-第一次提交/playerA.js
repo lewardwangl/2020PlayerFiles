@@ -60,7 +60,7 @@ window.playerA = new (class PlayerControl {
     closetTankAndCos[2] = 1
     var descision = this.#computeNetworkOutput(closetTankAndCos)
 
-    
+  
     // 躲AI子弹
     let Bullet = new Array(this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP,);
 
@@ -603,6 +603,12 @@ window.playerA = new (class PlayerControl {
       }
     }
     var res = new Array()
+
+    if(minDistanchTank == undefined){
+      res[0] = 0
+      res[1] = 0
+      return res
+    }
     res[0] = minDistance
     res[1] = Math.cos(Math.atan((minDistanchTank.Y - y) / (minDistanchTank.X - x)))
     return res
