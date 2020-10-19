@@ -1,4 +1,3 @@
-
 window.playerA = new (class PlayerControl {
   // A 选手   B 选手
   constructor(type) {
@@ -10,7 +9,6 @@ window.playerA = new (class PlayerControl {
   }
 
   land() {
-    this.#setName();
     // 当前的坦克实例
     var cur = undefined
     var enr = undefined
@@ -95,7 +93,7 @@ window.playerA = new (class PlayerControl {
       }
       console.log("dis-res", res); 
       if(res){dis *= 1000}
-      if(secruitydistance>dis  && enemyTanks.length >= 3)
+      if(secruitydistance>dis  && enemyTanks.length >= 4)
       {
         escapenum++//逃亡系数，大了就要跑
       }
@@ -146,7 +144,7 @@ window.playerA = new (class PlayerControl {
        escapedir = 5
        fight = 3
     }
-    document.onkeydown(this.#fireEv);
+    //document.onkeydown(this.#fireEv);
     if (moveDirection == undefined && escapenum < 4) {
       //不移动可以考虑炮击
       if (undefined != lateEnemy) {
@@ -236,9 +234,11 @@ window.playerA = new (class PlayerControl {
     if (undefined != moveDirection) {
       console.log(moveDirection)
     }
+	this.#setName();
   }
 
   leave() {
+	this.#setName();
     document.onkeyup(this.#moveEv);
     document.onkeyup(this.#fireEv);
   }
@@ -498,8 +498,11 @@ window.playerA = new (class PlayerControl {
   // 设置队伍
   #setName() {
     document.getElementById(
+      `Player${this.type === "A" ? 1 : 2}barName`
+    ).value = "三只松鼠"
+    document.getElementById(
       `Player${this.type === "A" ? 1 : 2}Name`
-    ).textContent = `三只松鼠`;
+    ).textContent = "三只松鼠"
   }
   // 控制移动   举例子：  向左移动： this.#move(this.#DIRECTION.LEFT)
   #move(direction) {
