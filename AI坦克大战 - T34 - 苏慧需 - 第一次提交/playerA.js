@@ -1,5 +1,3 @@
-window.desX = 180
-window.desY = 600
 window.playerA = new (class PlayerControl {
   // A 选手   B 选手
   constructor(type) {
@@ -8,9 +6,6 @@ window.playerA = new (class PlayerControl {
     this.#fireEv = new CustomEvent("keydown");
     this.firetimestamp = (new Date()).valueOf()
     this.priority = this.#DIRECTION.STOP;
-    this.target = false
-    this.enemysInCoordinate = [[],[],[],[]]
-    this.apiDir = 4
   }
 
   land() {
@@ -67,22 +62,18 @@ window.playerA = new (class PlayerControl {
 
     this.#calcBulletDistance(enemyBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
     this.#calcBulletDistance(eBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
-    // moveDirection = this.#avoidBullet(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection)
-    moveDirection = this.apiDir
+    moveDirection = this.#avoidBullet(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection)
 
     var lateEnemy = undefined
-    var misDistanceOfEnemy = currentTankWH * 100
+    var misDistanceOfEnemy = currentTankWH * 150
     var secruitydistance = currentTankWH * 6
     var secruitylevel = enemyTanks.length
     var firedirectdis = 4
     var escapedir = 4
     var fight = 6
     var escapenum = 0
-    this.enemysInCoordinate = [[],[],[],[]]
 
-    var lll = []
     for (const enemy of enemyTanks) {
-      lll.push({"X":enemy.X,"Y":enemy.Y,"D":enemy.direction})
       const dis = this.#calcTwoPointDistance(
         currentTankX,
         currentTankY,
@@ -90,7 +81,7 @@ window.playerA = new (class PlayerControl {
           enemy.Y 
       );
 
-      if(secruitydistance>dis  && enemyTanks.length >= 4)
+      if(secruitydistance>dis  && enemyTanks.length >= 5)
       {
         escapenum++//逃亡系数，大了就要跑
       }
@@ -98,14 +89,7 @@ window.playerA = new (class PlayerControl {
         misDistanceOfEnemy = dis;
         lateEnemy = enemy;
       }
-      var posision = this.#getPosition(currentTankX, currentTankY,enemy.X,enemy.Y)
-      if (this.enemysInCoordinate[posision]==null){
-        this.enemysInCoordinate[posision] = []
-      }else{
-        this.enemysInCoordinate[posision].push(enemy)
-      }
     }
-
     if(undefined != enemyTank)
     {
       const enemydis = this.#calcTwoPointDistance(
@@ -127,9 +111,6 @@ window.playerA = new (class PlayerControl {
        firedirectdis = 3
        escapedir = 3
        fight = 4
-    }
-    if (this.target==false && currentTankX<=180){
-      this.target=true
     }
     if (moveDirection == undefined && escapenum < 4) {
       //不移动可以考虑炮击
@@ -160,28 +141,15 @@ window.playerA = new (class PlayerControl {
             }
           }
         }
-        if ((disX > fight * currentTankWH || disY > fight * currentTankWH) && dis > fight * currentTankWH  || this.target==false) {//追击
-          console.log(this.target)
-          if (this.target==false){
-            if (/*(disX > disY) && (lateEnemy.X < currentTankX) && */this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[4] && this.#DIRECTION.STOP == Bullet[9]) {
-              moveDirection = this.#DIRECTION.LEFT;
-            }else if ((disX < disY) && (lateEnemy.Y < currentTankY) && this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[2] && this.#DIRECTION.STOP == Bullet[3]) {
-              moveDirection = this.#DIRECTION.UP;
-            } else if ((disX < disY) && (lateEnemy.Y >= currentTankY) && this.#DIRECTION.STOP == Bullet[9] && this.#DIRECTION.STOP == Bullet[10] && this.#DIRECTION.STOP == Bullet[11]) {
-              moveDirection = this.#DIRECTION.DOWN;
-            } else if ((disX > disY) && (lateEnemy.X >= currentTankX) && this.#DIRECTION.STOP == Bullet[3] && this.#DIRECTION.STOP == Bullet[7] && this.#DIRECTION.STOP == Bullet[11]) {
-              moveDirection = this.#DIRECTION.RIGHT;
-            }
-          }else{
-            if ((disX < disY) && (lateEnemy.Y < currentTankY) && this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[2] && this.#DIRECTION.STOP == Bullet[3]) {
-              moveDirection = this.#DIRECTION.UP;
-            } else if ((disX < disY) && (lateEnemy.Y >= currentTankY) && this.#DIRECTION.STOP == Bullet[9] && this.#DIRECTION.STOP == Bullet[10] && this.#DIRECTION.STOP == Bullet[11]) {
-              moveDirection = this.#DIRECTION.DOWN;
-            } else if ((disX > disY) && (lateEnemy.X >= currentTankX) && this.#DIRECTION.STOP == Bullet[3] && this.#DIRECTION.STOP == Bullet[7] && this.#DIRECTION.STOP == Bullet[11]) {
-              moveDirection = this.#DIRECTION.RIGHT;
-            } else if ((disX > disY) && (lateEnemy.X < currentTankX) && this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[4] && this.#DIRECTION.STOP == Bullet[9]) {
-              moveDirection = this.#DIRECTION.LEFT;
-            }
+        if ((disX > fight * currentTankWH || disY > fight * currentTankWH) && dis > fight * currentTankWH) {//追击
+          if ((disX < disY) && (lateEnemy.Y < currentTankY) && this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[2] && this.#DIRECTION.STOP == Bullet[3]) {
+            moveDirection = this.#DIRECTION.UP;
+          } else if ((disX < disY) && (lateEnemy.Y >= currentTankY) && this.#DIRECTION.STOP == Bullet[9] && this.#DIRECTION.STOP == Bullet[10] && this.#DIRECTION.STOP == Bullet[11]) {
+            moveDirection = this.#DIRECTION.DOWN;
+          } else if ((disX > disY) && (lateEnemy.X >= currentTankX) && this.#DIRECTION.STOP == Bullet[3] && this.#DIRECTION.STOP == Bullet[7] && this.#DIRECTION.STOP == Bullet[11]) {
+            moveDirection = this.#DIRECTION.RIGHT;
+          } else if ((disX > disY) && (lateEnemy.X < currentTankX) && this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[4] && this.#DIRECTION.STOP == Bullet[9]) {
+            moveDirection = this.#DIRECTION.LEFT;
           }
           console.log("战术前进", moveDirection)
         }
@@ -200,7 +168,7 @@ window.playerA = new (class PlayerControl {
         }
         
         var c = (new Date()).valueOf()
-        if (c - this.firetimestamp > 150  && this.target==true) {
+        if (c - this.firetimestamp > 250) {
           this.firetimestamp = c
           this.#fire();
           document.onkeyup(this.#fireEv);
@@ -225,23 +193,12 @@ window.playerA = new (class PlayerControl {
       console.log(moveDirection)
     }
     this.#setName();
-    console.log(this.enemysInCoordinate)
-    this.#efficientFire(currentTankX,currentTankY)
-    if (enemyBullets.length>0){
-      console.log("currentTankX,currentTankY",currentTankX,currentTankY,enemyBullets)
-      this.apiDir = this.#api(currentTankX,currentTankY,window.desX,window.desY,enemyBullets)
-    }
   }
 
   leave() {
     this.#setName();
     document.onkeyup(this.#moveEv);
-    var c = (new Date()).valueOf()
-    if (c - this.firetimestamp > 150  && this.target==true) {
-      this.firetimestamp = c
-      this.#fire();
-      document.onkeyup(this.#fireEv);
-    }
+    document.onkeyup(this.#fireEv);
   }
   type;
   // private
@@ -550,128 +507,5 @@ window.playerA = new (class PlayerControl {
       }
     }
     return false
-  }
-  /*
-  以坦克中心为坐标原点，将地方坦克分配的各个象限中
-  0 1
-  3 2
-  */
-  #getPosition(curX,curY,enX,enY){
-    if (curX>enX){
-      if(curY>enY){
-        return 0
-      }else{
-        return 3
-      }
-    }else{
-      if(curY>enY){
-        return 1
-      }else{
-        return 2
-      }
-    }
-  }
-  /*
-  应该往哪个方向发子弹
-   */
-  #efficientFire(curX,curY){
-    var up = 0;
-    var down = 0;
-    var left = 0;
-    var right = 0;
-    let j = 0
-    for (j = 0; j < this.enemysInCoordinate[0].length; j++){
-      const enTank = this.enemysInCoordinate[0][j]
-      if (enTank==undefined){
-        continue
-      }
-      up+=1
-      left+=1
-      if (Math.abs(curX-enTank.X)<75 || Math.abs(curY-enTank.Y)<75){
-        if (Math.abs(curX-enTank.X)<75<=Math.abs(curY-enTank.Y)<75){
-          up+=5
-        }else{
-          left+=5
-        }
-      }
-      console.log(up, left)
-    }
-    for ( j = 0; j< this.enemysInCoordinate[1].length; j++) {
-      const enTank = this.enemysInCoordinate[0][j]
-      if (enTank==undefined){
-        continue
-      }
-      up += 1
-      right += 1
-      if (Math.abs(curX - enTank.X )<75 || Math.abs(curY - enTank.Y )<75) {
-        if (Math.abs(curX - enTank.X )<75 <= Math.abs(curY - enTank.Y )<75) {
-          up += 5
-        } else {
-          right += 5
-        }
-      }
-    }
-    for ( j = 0; j< this.enemysInCoordinate[2].length; j++){
-      const enTank = this.enemysInCoordinate[0][j]
-      if (enTank==undefined){
-        continue
-      }
-      down+=1
-      right+=1
-      if (Math.abs(curX-enTank.X)<75 || Math.abs(curY-enTank.Y)<75){
-        if (Math.abs(curX-enTank.X)<75<=Math.abs(curY-enTank.Y)<75){
-          down+=5
-        }else{
-          right+=5
-        }
-      }
-    }
-    for ( j = 0; j< this.enemysInCoordinate[3].length; j++){
-      const enTank = this.enemysInCoordinate[0][j]
-      if (enTank==undefined){
-        continue
-      }
-      down+=1
-      left+=1
-      if (Math.abs(curX-enTank.X)<75 || Math.abs(curY-enTank.Y)<75){
-        if (Math.abs(curX-enTank.X)<75<=Math.abs(curY-enTank.Y)<75){
-          down+=5
-        }else{
-          left+=5
-        }
-      }
-    }
-    // console.log("11111111111111111111")
-    // console.log(up, down, left, right)
-  }
-  #api(curX,curY,desX,desY,arraybullet){
-    var bulletsList = []
-    for (const bullet of arraybullet) {
-      bulletsList.push({"X":bullet.X,"Y":bullet.Y,"D":bullet.direction})
-    }
-    var apiDir = 4
-    $.ajax({
-      url:"http://localhost:8000/api/get_result/",
-      data:{
-        curX:curX,//参数dao
-        curY:curY,//参数dao
-        desX:desX,//参数dao
-        desY:desY,//参数dao
-        bullets:JSON.stringify(bulletsList)
-      },
-      type:"GET",
-      async:false,
-    }).done(
-        function(re){
-          console.log(re)
-          var reJson= JSON.parse(re)
-          apiDir = reJson.route[0]
-        },
-    ).fail(function(XMLHttpRequest, textStatus, errorThrown){
-      alert(XMLHttpRequest.status);
-      alert(XMLHttpRequest.readyState);
-      alert(textStatus);
-    });
-    return apiDir
   }
 })("A");
