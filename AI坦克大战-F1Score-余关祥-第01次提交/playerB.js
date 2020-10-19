@@ -206,7 +206,7 @@
         cur => cur.id == (type === "A" ? 200 : 100)
       );
       // 当前坦克挂了或者游戏直接结束了
-      if (!currentTank || checkGameOver()) return teamName;
+      if (!currentTank) return teamName;
       if (type === "A" && player1Die) return teamName;
       if (type === "B" && player2Die) return teamName;
 
