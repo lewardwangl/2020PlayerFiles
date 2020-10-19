@@ -222,6 +222,7 @@
       //下面是方便读取的全局数据的别名
       // 所有的敌方坦克实例数组 第三关会将另一个玩家包含进去，其他则只是AI
       const enemyTanks = level === 3 ? [...aTankCount, enemyTank] : aTankCount;
+      if(enemyTanks.length === 0) return teamName;
       // 当前屏幕下我的子弹实例集合
       const myBullets = type === "A" ? aMyBulletCount1 : aMyBulletCount2;
       // 当前屏幕下，另一个玩家子弹实例集合，只有第三关才会用到，其他关玩家子弹不需要躲，无伤
