@@ -1288,7 +1288,8 @@ window.playerB = new (class PlayerControl {
             centerTankY,
             currentTankWH,
             DanNearBa,
-            4
+            4,
+            RemainTankCount
           )
           moveDirection = this.#getMaxDan_2(DanNearBa, Dan, 0.5)
           // 判断距离最近的坦克保持距离
@@ -1349,7 +1350,7 @@ window.playerB = new (class PlayerControl {
     if (CanAttack[currentTankDirect] != 0) {
       if (CanAttack[currentTankDirect] < 300) attack = 1
       else {
-        if (aMyBulletCount1.length < 4) {
+        if (aMyBulletCount2.length < 4) {
           attack = 1
         }
       }
@@ -1358,14 +1359,14 @@ window.playerB = new (class PlayerControl {
     console.log(moveDirection)
     return [moveDirection, attack]
   }
-  #isNearBoundaryDan_2 (X, Y, currentTankWH, Dan, n) {
+  #isNearBoundaryDan_2 (X, Y, currentTankWH, Dan, n, RemainTankCount) {
     const DisUP = screenY - Y
     const DisDOWN = Y
     const DisLEFT = screenX - X
     const DisRIGHT = X
     let tanksnum = aTankCount.length
     if (tanksnum < 10) n = (10 / tanksnum) * n
-
+    var m = RemainTankCount.LEFT * 10
     // n = (20 / tanksnum) * n
     /*Dan.UP +=
       DisUP < screenY / n ? Math.cos(((DisUP / screenY) * n * Math.PI) / 2) : 0*/
@@ -1374,8 +1375,8 @@ window.playerB = new (class PlayerControl {
         ? Math.cos(((DisDOWN / screenY) * n * Math.PI) / 2)
         : 0
     Dan.LEFT +=
-      DisLEFT < screenX / n / 4
-        ? Math.cos(((DisLEFT / screenX) * n * 4 * Math.PI) / 2)
+      DisLEFT < m
+        ? Math.cos(((m / 100) * Math.PI) / 2)
         : 0
     Dan.RIGHT +=
       DisRIGHT < screenX / n / 4

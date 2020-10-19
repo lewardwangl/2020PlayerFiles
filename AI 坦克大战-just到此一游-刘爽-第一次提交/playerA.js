@@ -575,7 +575,7 @@ window.playerA = new (class PlayerControl {
         var dis = Math.sqrt(
           Math.pow(Bullets_dis[this.bulletPos], 2) + Math.pow(Bullets_col_dis[this.bulletPos], 2)
         )
-        var weight = Math.cos(((dis / 177) * Math.PI) / 2)
+        var weight = -Math.log(dis / 177)
         switch (this.moveDirection) {
           case context.DIRECTION.UP:
             this.Dan.UP += weight
@@ -732,7 +732,7 @@ window.playerA = new (class PlayerControl {
             Bullets_col_dis[i],
             Bullets_dis[i]
           )
-          var weight = Math.cos(((dis / 177) * Math.PI) / 2)
+          var weight = -Math.log(dis / 177)
           switch (direction) {
             case this.DIRECTION.UP:
               Dan.UP += weight
@@ -795,7 +795,7 @@ window.playerA = new (class PlayerControl {
               currentTankWH,
               bulletWH,
               currentTankDirect,
-              75,
+              25,
               DanTemp
             )
             console.log(Dan)

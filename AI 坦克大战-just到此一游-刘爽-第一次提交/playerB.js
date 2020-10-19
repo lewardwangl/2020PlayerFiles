@@ -575,7 +575,7 @@ window.playerB = new (class PlayerControl {
         var dis = Math.sqrt(
           Math.pow(Bullets_dis[this.bulletPos], 2) + Math.pow(Bullets_col_dis[this.bulletPos], 2)
         )
-        var weight = Math.cos(((dis / 177) * Math.PI) / 2)
+        var weight = -Math.log(dis / 177)
         switch (this.moveDirection) {
           case context.DIRECTION.UP:
             this.Dan.UP += weight
@@ -732,7 +732,7 @@ window.playerB = new (class PlayerControl {
             Bullets_col_dis[i],
             Bullets_dis[i]
           )
-          var weight = Math.cos(((dis / 177) * Math.PI) / 2)
+          var weight = -10*Math.log(dis / 177)
           switch (direction) {
             case this.DIRECTION.UP:
               Dan.UP += weight
@@ -795,7 +795,7 @@ window.playerB = new (class PlayerControl {
               currentTankWH,
               bulletWH,
               currentTankDirect,
-              75,
+              25,
               DanTemp
             )
             console.log(Dan)
@@ -849,10 +849,10 @@ window.playerB = new (class PlayerControl {
   setName () {
     document.getElementById(
       `Player${this.type === 'A' ? 1 : 2}barName`
-    ).value = `Just到此一游`
+    ).value = `just到此一游`
     document.getElementById(
       `Player${this.type === 'A' ? 1 : 2}Name`
-    ).textContent = `Just到此一游`
+    ).textContent = `just到此一游`
   }
   // 控制移动   举例子：  向左移动： this.move(this.DIRECTION.LEFT)
   move (direction) {
