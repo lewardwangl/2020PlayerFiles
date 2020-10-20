@@ -51,8 +51,6 @@ window.playerB = new (class PlayerControl {
     // 当前策略移动方向
     let moveDirection = undefined
 
-
-
     // 中央逃逸点
     const cx = canvas.width/2;
     const cy = canvas.height/2
@@ -65,7 +63,7 @@ window.playerB = new (class PlayerControl {
     moveDirection = this.#avoidBullet(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection)
 
     var lateEnemy = undefined
-    var misDistanceOfEnemy = currentTankWH * 150
+    var misDistanceOfEnemy = currentTankWH * 100
     var secruitydistance = currentTankWH * 6
     var secruitylevel = enemyTanks.length
     var firedirectdis = 4
@@ -81,7 +79,7 @@ window.playerB = new (class PlayerControl {
           enemy.Y 
       );
 
-      if(secruitydistance>dis  && enemyTanks.length >= 5)
+      if(secruitydistance>dis  && enemyTanks.length >= 4)
       {
         escapenum++//逃亡系数，大了就要跑
       }
@@ -168,7 +166,7 @@ window.playerB = new (class PlayerControl {
         }
         
         var c = (new Date()).valueOf()
-        if (c - this.firetimestamp > 250) {
+        if (c - this.firetimestamp > 150) {
           this.firetimestamp = c
           this.#fire();
           document.onkeyup(this.#fireEv);

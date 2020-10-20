@@ -274,7 +274,7 @@ window.playerA = new (class PlayerControl {
 
     let can = false;
     let sDir = direction;
-    if(stepNum > 22){
+    if(stepNum > 20){
       return true;
     }
     for(let i=0; i<5; i++, sDir++) {

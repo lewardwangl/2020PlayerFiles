@@ -9,8 +9,21 @@ window.playerB = new (class PlayerControl {
 
     this.tank_wh = 50
     this.bullet_wh = 10
-    this.tb_safe_min_dis = 200
+
+    this.tb_safe_min_dis = 150
     this.tt_safe_min_dis = 110 // 计算得来
+
+    this.avoid_threshold_safe = 0.02
+    this.avoid_threshold_denger = 0.5
+    this.avoid_last_direct = undefined
+
+    this.attack_threshold_fire = this.tank_wh
+    this.attack_threshold_chase = this.tank_wh * 10
+    this.attack_next_fire_direct = undefined
+    
+    this.attack_chase_count = 0 // 同一个方向追赶次数
+    this.attack_chase_direct = undefined
+
     this.abbbp_fire = 0
     this.abbbp_bullet_surplus = 0
     this.abbbp_last_attack_direct = undefined
@@ -31,7 +44,7 @@ window.playerB = new (class PlayerControl {
     
     if (!my_tank) return;
     this.abbbp_count += 1
-    //console.log("abbb_count--------------------------------------------------------------", abbb_count,this.abbbp_count)
+    //console.log("####### --------------------------------------------------------------", abbb_count,this.abbbp_count)
 
     var enemy_tanks = aTankCount
     var enemy_bullets = aBulletCount
@@ -50,7 +63,7 @@ window.playerB = new (class PlayerControl {
       } while(0)
     }
 
-    this.abbb2_land(my_tank, enemy_bullets, enemy_tanks)
+    this.abbb2_land(my_tank, my_bullets, enemy_tanks, enemy_bullets)
     this.#setName()
   }
 
@@ -59,11 +72,11 @@ window.playerB = new (class PlayerControl {
     if (this.abbbp_fire) {
       this.abbbp_fire = 0
       var c = (new Date()).valueOf()
-      if (this.abbbp_count <= 30 || (c - this.firetimestamp > 500)) {
+      //if (this.abbbp_count <= 30 || (c - this.firetimestamp > 500)) {
         this.firetimestamp = c
         this.#fire();
-        console.log("fire")
-      }
+        //console.log("fire")
+      //}
     }
   }
 
@@ -73,26 +86,35 @@ window.playerB = new (class PlayerControl {
    * 画布 左上角（0,0） 右下角（screenX，screenY）
   */
   // 1017 新策略
-  abbb2_land(my_tank, enemy_bullets, enemy_tanks) {
+  abbb2_land(my_tank, my_bullets, enemy_tanks, enemy_bullets) {
+    if (!enemy_tanks || enemy_tanks.length == 0) { return }
+
     let direct = undefined
 
-    if (this.abbbp_count < 30) {
-      let idiot = this.abbb2_idiot_attack()
-      direct = idiot[1]
-      this.abbbp_fire = idiot[0]
-      console.log("####### 1 idiot attack #######")
-    }else {
+    // if (this.abbbp_count < 30) {
+    //   let idiot = this.abbb2_idiot_attack()
+    //   direct = idiot[1]
+    //   this.abbbp_fire = idiot[0]
+    //   console.log("####### 1 idiot attack #######",direct)
+    // }else {
       direct = this.abbb2_avoid(my_tank, enemy_bullets, enemy_tanks)
       if (direct == undefined) {
-        let att = this.abbb2_attack(my_tank, enemy_tanks)
+        let att = this.abbb2_attack(my_tank, my_bullets, enemy_tanks)
         direct = att[1]
         this.abbbp_fire = att[0]
-        console.log("####### 2 attack #######")
+        //console.log("####### 2 attack #######",direct,this.abbbp_fire)
       }else {
+        //console.log("this.attack_next_fire_direct land",this.attack_next_fire_direct)
+        if (this.attack_next_fire_direct != undefined && this.attack_chase_count >= 5) {
+          direct = this.attack_next_fire_direct
+          this.abbbp_fire = 1
+          this.attack_next_fire_direct = undefined
+          this.attack_chase_count = 0
+        }
         if (direct == this.abbbp_last_attack_direct) { this.abbbp_fire = 1 }
-        console.log("####### 3 avoid #######")
+        //console.log("####### 3 avoid #######",direct,this.abbbp_fire)
       }
-    }
+    // }
 
     if (this.abbbp_fire) {
       this.abbbp_last_attack_direct = direct
@@ -112,18 +134,19 @@ window.playerB = new (class PlayerControl {
   }
 
   // 1017 进攻
-  abbb2_attack(my_tank, enemy_tanks) {
+  abbb2_attack(my_tank, my_bullets, enemy_tanks) {
 
     const mt_x1 = my_tank.X + this.tank_wh / 2.0
     const mt_y1 = screenY - (my_tank.Y + this.tank_wh / 2.0)
-    const mt_direct = my_tank.direction
     const that = this
+    //console.log("abbb2_attack","my_xy=",mt_x1,mt_y1)
     
-    var move_x = 0
-    var move_y = 0
-    var fire = 0
-    var min_dis = screenY * screenY
-    console.log("abbb2_attack","my_xy=",mt_x1,mt_y1)
+    // var move_x = 0
+    // var move_y = 0    
+    // var min_dis = screenY * screenY
+    // var min_dir = undefined
+    var min_dis_tanks = []
+
     enemy_tanks.forEach(ent => {
       // console.log("-------------------------------")
       let ent_x = ent.X + that.tank_wh / 2.0
@@ -132,39 +155,142 @@ window.playerB = new (class PlayerControl {
       let pos_x = ent_x - mt_x1 
       let pos_y = ent_y - mt_y1
       let dis = Math.sqrt(Math.pow(pos_x, 2) + Math.pow(pos_y, 2))
-      if (dis < min_dis) {
-        min_dis = dis
-        move_x = pos_x
-        move_y = pos_y
+      // if (dis < min_dis) {
+      //   min_dis = dis
+      //   move_x = pos_x
+      //   move_y = pos_y
+      //   min_dir = ent.direction
+      // }
+      let new_ent = {
+        dis: dis,
+        x: ent_x,
+        y: ent_y,
+        pos_x: pos_x,
+        pos_y: pos_y,
+        direction: ent.direction 
+      }
+      for (let i = 0; i <= min_dis_tanks.length; i++) {
+        let tmp = min_dis_tanks[i]
+        if (!tmp || tmp.dis > new_ent.dis) {
+          min_dis_tanks.splice(i, 0, new_ent)
+          break
+        }
       }
       // console.log("abbb2_attack","pos_xy=",pos_x,pos_y)
       // move_x += pos_x * (1 / dis)
       // move_y += pos_y * (1 / dis)
     })
-    console.log("abbb2_attack","move_xy=",move_x,move_y," min_dis="+min_dis)
+    var min_dis_ent = min_dis_tanks[0]
+    if (my_bullets.length > 0) {
+      // console.log(my_bullets)
+      // console.log(min_dis_tanks)
+      // 剔除可能被我命中的tank
+      for (var i = 0; i < my_bullets.length; i++) {
+        let my_b = my_bullets[i]
+        let my_b_x = my_b.X
+        let my_b_y = screenY - my_b.Y
+        for (var j = 0; j < min_dis_tanks.length - 1; j++) {
+          let min_t = min_dis_tanks[j]
+          let tmp_pos = [min_t.x - my_b_x, min_t.y - my_b_y]
+          let tmp_dir = that.abbbtool_vector_2_direct(tmp_pos)
+          //console.log("min_t_xy" + min_t.x, min_t.y," tmp_pos=" + tmp_pos, " tmp_dir=" + tmp_dir, "my_b.d=" + my_b.direction)
+          // 会不会太粗略了
+          let min_min_t = min_dis_tanks[j + 1]
+          if (min_min_t != undefined && min_min_t.dis < that.attack_threshold_chase) {
+            if (tmp_dir == my_b.direction) {
+              min_dis_tanks.splice(j, 1)
+              break
+            }
+          }
+        }
+      }
+      //console.log(min_dis_tanks)
+      //debugger
+    }
+    if (min_dis_tanks.length > 0) {
+      min_dis_ent = min_dis_tanks[0]
+      // min_dis = min_dis_tanks[0].dis
+      // move_x = min_dis_tanks[0].pos_x
+      // move_y = min_dis_tanks[0].pos_y
+      // min_dir = min_dis_tanks[0].direction
+    }
+    let min_dis = min_dis_ent.dis
+    let move_x = min_dis_ent.pos_x
+    let move_y = min_dis_ent.pos_y
+    //console.log("abbb2_attack","move_xy=" + move_x, move_y, "min_dis=" + min_dis)
+
+    var fire = 0
     var move_direction = undefined
+    var type = ""
     if (move_x != 0 || move_y != 0) {
-      if (min_dis < this.tt_safe_min_dis) {
-        move_x = -1 * move_x
-        move_y = -1 * move_y
-        fire = 0
-      }else {
-        fire = 1
-      }
-      if (Math.abs(move_x) > Math.abs(move_y)) {
-        if (move_x > 0) {
-          move_direction = this.#DIRECTION.RIGHT
+      let normal_attack = 0
+      if (min_dis > this.attack_threshold_chase) {
+        // 使劲追
+        type = "fast chase"
+        if (Math.abs(move_y) > Math.abs(move_x)) {
+          move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
         }else {
-          move_direction = this.#DIRECTION.LEFT
+          move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+        }
+      }else if (min_dis < this.tt_safe_min_dis) {
+        // 远离他
+        type = "avoid"
+        /**
+         *  逃跑策略1，180度旋转角度
+        */
+        // if (Math.abs(move_y) <= Math.abs(move_x)) {
+        //   move_direction = (move_y > 0) ? this.#DIRECTION.DOWN : this.#DIRECTION.UP
+        // }else if (Math.abs(move_y) > Math.abs(move_x)) {
+        //   move_direction = (move_x > 0) ? this.#DIRECTION.LEFT : this.#DIRECTION.RIGHT
+        // }
+
+        /**
+         * 逃跑策略2，假设当前敌人下次的方向和当前方向一致
+        */
+        let enb_radian = that.abbbtool_direct_2_radian(min_dis_ent.direction)
+        let ent_vector = [Math.round(Math.cos(enb_radian)), Math.round(Math.sin(enb_radian))]        
+        let inner = min_dis_ent.pos_x * ent_vector[0] + min_dis_ent.pos_y * ent_vector[1]
+        let outer = min_dis_ent.pos_x * ent_vector[1] - min_dis_ent.pos_y * ent_vector[0]
+        if (inner < 0) {
+          let tmp_radian = enb_radian + (Math.sign(outer) * (Math.PI / 2))
+          move_direction = this.abbbtool_radian_2_direct(tmp_radian)
+        }else {
+          normal_attack = 1
         }
       }else {
-        if (move_y > 0) {
-          move_direction = this.#DIRECTION.UP
+        normal_attack = 1
+      }
+      if (normal_attack) {
+        // 射击范围内
+        type = "fire"
+        if (Math.abs(move_x) < this.attack_threshold_fire) {
+          move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+          fire = 1
+        }else if (Math.abs(move_y) < this.attack_threshold_fire) {
+          move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+          fire = 1
         }else {
-          move_direction = this.#DIRECTION.DOWN
+          // 靠近
+          type = "slow chase"
+          if (Math.abs(move_y) <= Math.abs(move_x)) {
+            move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+            this.attack_next_fire_direct = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+          }else if (Math.abs(move_y) > Math.abs(move_x)) {
+            move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+            this.attack_next_fire_direct = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+          }
+          if (this.attack_chase_direct == undefined || this.attack_chase_direct == move_direction) {
+            this.attack_chase_count += 1
+            if (this.attack_chase_count >= 5 && this.attack_next_fire_direct != undefined) {
+              move_direction = this.attack_next_fire_direct
+              fire = 1
+              this.attack_chase_direct = undefined
+              this.attack_chase_count = 0
+            }
+          }
         }
       }
-      console.log("abbb2_attack","move_direction=",move_direction," min_dis=" + min_dis)
+      //console.log("abbb2_attack","final ~~~~", type, "move_direction=" + move_direction, "fire=" + fire)
     }else {
       move_direction = this.#DIRECTION.STOP
     }
@@ -189,28 +315,34 @@ window.playerB = new (class PlayerControl {
     var move_y = 0
     var has_too_close_bullets = 0
 
-    console.log("abbb2_avoid","my_xy=",mt_x1,mt_y1)
+    //console.log("abbb2_avoid","my_xy=",mt_x1,mt_y1)
 
     function aloof_wall() {
-      const detection_dis = 2 * 50
-      const wall_weight = 2
+      const detection_dis_x = 0.5 * 0.5 * that.tank_wh // 左右边界
+      const wall_weight_x = 0.5
+
+      const detection_dis_y = 0.5 * that.tank_wh       // 上下边界
+      const wall_weight_y = 1
+
+      // /const detection_dis = 0.3 * 50
+      //const wall_weight = 0.6
       let wall_move_x = 0
       let wall_move_y = 0
-      if (mt_x1 < (detection_dis + h1)) {
-        wall_move_x = (1 - (mt_x1 - h1) / detection_dis) * wall_weight
-      }else if (mt_x1 > screenX - (detection_dis + h1)) {
-        wall_move_x = -1 * (1 - (screenX - mt_x1 - h1) / detection_dis) * wall_weight
+      if ((mt_x1 - h1) < detection_dis_x) {
+        wall_move_x = (1 - (mt_x1 - h1) / detection_dis_x) * wall_weight_x
+      }else if ((mt_x1 + h1) > (screenX - detection_dis_x)) {
+        wall_move_x = -1 * (1 - (screenX - (mt_x1 + h1)) / detection_dis_x) * wall_weight_x
       }
-      if (mt_y1 < (detection_dis + h1)) {
-        wall_move_y = (1 - (mt_y1 - h1) / detection_dis) * wall_weight
-      }else if (mt_y1 > screenY - (detection_dis + h1)) {
-        wall_move_y = -1 * (1 - (screenY - mt_y1 - h1) / detection_dis) * wall_weight
+      if ((mt_y1 - h1) < detection_dis_y) {
+        wall_move_y = (1 - (mt_y1 - h1) / detection_dis_y) * wall_weight_y
+      }else if ((mt_y1 + h1) > (screenY - detection_dis_y)) {
+        wall_move_y = -1 * (1 - (screenY - (mt_y1 + h1)) / detection_dis_y) * wall_weight_y
       }
       return [wall_move_x, wall_move_y]
     }
     let wall = aloof_wall()
     if (wall[0] != 0 || wall[1] != 0) { 
-      console.log("abbb2_avoid","aloof_wall",wall)
+      //console.log("abbb2_avoid","aloof_wall",wall,mt_x1,mt_y1,screenX,screenY)
     }
     move_x += wall[0]
     move_y += wall[1]
@@ -250,7 +382,7 @@ window.playerB = new (class PlayerControl {
       //console.log("abbb2_avoid","inner=" + inner, "outer=" + outer)
 
       if (inner < 0 && Math.abs(outer) < that.tb_safe_min_dis) {
-        console.log("abbb2_avoid","-------pos_xy=",pos_x,pos_y, "spd_xy=", spd_x,spd_y,"bullet_xy=", enb_x, enb_y, "direct=" + enb.direction," radian=" + enb_radian)
+        //console.log("abbb2_avoid","-------pos_xy=",pos_x,pos_y, "spd_xy=", spd_x,spd_y,"bullet_xy=", enb_x, enb_y, "direct=" + enb.direction," radian=" + enb_radian)
         // 预测可能命中我的子弹
         let tank_way = 0
         let bullet_way = 0
@@ -265,7 +397,7 @@ window.playerB = new (class PlayerControl {
                          Math.ceil((tank_way + (h1 + h2)) / my_tank.speed)]
         let bullet_time = [Math.ceil((bullet_way - (h1 + h2)) / enb.speed) , 
                            Math.ceil((bullet_way + (h1 + h2)) / enb.speed)]
-        console.log("abbb2_avoid", "tank_time=" + tank_time[0], tank_time[1], "  bullet_time=" + bullet_time[0], bullet_time[1])
+        //console.log("abbb2_avoid", "tank_time=" + tank_time[0], tank_time[1], "  bullet_time=" + bullet_time[0], bullet_time[1])
         if (tank_time[0] > 1 && (tank_time[0] > bullet_time[1] || tank_time[1] < bullet_time[0])) {
           // 无法命中
         }else {
@@ -273,8 +405,9 @@ window.playerB = new (class PlayerControl {
           let tmp_dis = Math.pow(pos_x, 2) + Math.pow(pos_y, 2)
           let tmp_move_x = Math.round(Math.cos(tmp_dir)) * (10000 / tmp_dis)
           let tmp_move_y = Math.round(Math.sin(tmp_dir)) * (10000 / tmp_dis)
-          console.log("abbb2_avoid", "tmp_move_xy=" + tmp_move_x, tmp_move_y)
-          return [1, tmp_move_x, tmp_move_y]
+          //console.log("abbb2_avoid", "tmp_move_xy=" + tmp_move_x, tmp_move_y)
+          let denger = (Math.max(Math.abs(tmp_move_x), Math.abs(tmp_move_y)) > that.avoid_threshold_denger) ? 1 : 0
+          return [denger, tmp_move_x, tmp_move_y]
         }
       }
       return undefined
@@ -289,7 +422,8 @@ window.playerB = new (class PlayerControl {
     })
 
     var move_direction = undefined
-    if (move_x != 0 || move_y != 0) {
+    //if (move_x != 0 || move_y != 0) {
+    if (Math.abs(move_x) >= this.avoid_threshold_safe || Math.abs(move_y) >= this.avoid_threshold_safe) {
 
       // 防止逃跑到坦克堆里
       var predict_bullets = []
@@ -323,7 +457,7 @@ window.playerB = new (class PlayerControl {
           }
         }
       })
-      console.log("abbb2_avoid", "predict_bullets----", predict_bullets)
+      //console.log("abbb2_avoid", "predict_bullets----", predict_bullets)
       predict_bullets.forEach(enb => {
         let r = avoid_one(enb)
         if (r) {
@@ -334,24 +468,28 @@ window.playerB = new (class PlayerControl {
       })
 
       if (Math.abs(move_x) > Math.abs(move_y)) {
-        if (move_x > 0) {
-          move_direction = this.#DIRECTION.RIGHT
-        }else {
-          move_direction = this.#DIRECTION.LEFT
-        }
+        move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
       }else {
-        if (move_y > 0) {
-          move_direction = this.#DIRECTION.UP
-        }else {
-          move_direction = this.#DIRECTION.DOWN
-        }
+        move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
       }
     }else {
       if (has_too_close_bullets) {  
         move_direction = this.#DIRECTION.STOP
       }
     }
-    console.log("abbb2_avoid final ==== ", "move_xy=" + move_x, move_y, "direct="+move_direction)
+    if (has_too_close_bullets == 0) {
+      if (move_direction != undefined && this.avoid_last_direct != undefined) {
+        if (move_direction != this.#DIRECTION.STOP) {
+          if (Math.abs(this.avoid_last_direct - move_direction) == 2) {
+            move_direction = this.avoid_last_direct
+          }
+        }
+      }
+      this.avoid_last_direct = move_direction
+    }else {
+      this.avoid_last_direct = undefined
+    }
+    //console.log("abbb2_avoid final ==== ", "move_xy=" + move_x, move_y, "direct="+move_direction , "too_close_b=" + has_too_close_bullets)
     return move_direction
   }
 
@@ -364,14 +502,41 @@ window.playerB = new (class PlayerControl {
     }else if (direct == this.#DIRECTION.LEFT) {
       angle = 180
     }else if (direct == this.#DIRECTION.DOWN) {
-      angle = -90
+      angle = 270
     }
     return angle
+  }
+
+  abbbtool_radian_2_direct(radian) {
+    let direct = undefined
+    let angle = Math.round((2 * (2 * Math.PI + radian) / Math.PI) % 4)
+    if (angle == 0) {
+      direct = this.#DIRECTION.RIGHT
+    }else if (angle == 1) {
+      direct = this.#DIRECTION.UP
+    }else if (angle == 2) {
+      direct = this.#DIRECTION.LEFT
+    }else if (angle == 3) {
+      direct = this.#DIRECTION.DOWN
+    }
+    return direct
   }
 
   abbbtool_direct_2_radian(direct) {
     let angle = this.abbbtool_direct_2_angle(direct)
     return angle / 180 * Math.PI
+  }
+
+  abbbtool_vector_2_direct(v) {
+    let move_x = v[0]
+    let move_y = v[1]
+    let move_direction = undefined
+    if (Math.abs(move_x) > 3 * Math.abs(move_y)) {
+      move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+    }else if (Math.abs(move_y) > 3 * Math.abs(move_x)) {
+      move_direction =  (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+    }
+    return move_direction
   }
 
   type;
