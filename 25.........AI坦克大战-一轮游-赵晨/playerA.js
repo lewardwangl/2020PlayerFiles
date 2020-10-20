@@ -449,10 +449,10 @@ window.playerA = new (class PlayerControl {
   #setName() {
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}barName`
-    ).value = "一轮游1"
+    ).value = "一轮游"
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}Name`
-    ).textContent = "一轮游1"
+    ).textContent = "一轮游"
   }
   // 控制移动   举例子：  向左移动： this.#move(this.#DIRECTION.LEFT)
   #move(direction) {
