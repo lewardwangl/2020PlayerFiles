@@ -77,7 +77,9 @@ window.playerB = new (class PlayerControl {
     const collisionDirections = this.predictAllBulletCollision(enemyBullets, currentTankWH, bulletWH);
     console.log(moveDirection);
     var nearestTank = this.findNearestTank2(enemyTanks,bulletWH);
-    this.attackTank2(nearestTank,moveDirection,collisionDirections);
+    if (nearestTank != undefined){
+      this.attackTank2(nearestTank, moveDirection, collisionDirections);
+    }
 
     this.#setName();
   }
@@ -773,6 +775,9 @@ window.playerB = new (class PlayerControl {
   findNearestTank(enemyTanks,bulletWH) {
     let ctx = this.cur.X + this.currentTankWH/2;
     let cty = this.cur.Y + this.currentTankWH/2;
+    if (enemyTanks.length <= 0) {
+      return ;
+    }
     var nearestTank = enemyTanks[0];
     let nearestDis = this.calcTwoPointDistance(ctx, cty, nearestTank.X + bulletWH/2, nearestTank.Y + bulletWH/2);
     for (const enemy of enemyTanks) {
