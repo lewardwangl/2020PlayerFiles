@@ -1,4 +1,4 @@
-(function(type = "B", teamName = "GREEN-WORLD") {
+(function (type = "B", teamName = "GREEN-WORLD") {
   if (!["A", "B"].includes(type)) type = "A"; // exception
   // events:
   const moveEv = new Event("keydown");
@@ -7,11 +7,10 @@
 
   const direction2degree = [90, 0, 270, 180];
   const degree2direction = new Map([
-    [90, 0],
+    [90, -1],
     [0, 1],
-    [360, 1], //一样为右边
-    [270, 2],
-    [180, 3]
+    [270, 1],
+    [180, -1],
   ]);
   // 判0 趋近于0
   function zero(value) {
@@ -37,6 +36,15 @@
     return tempdir;
   }
   function getTankDirection(tank, movex, movey) {
+    if (movex == 0 && movey == 0) return undefined;
+    //  movex == 0 movey == 0.1
+    if (movex == 0) {
+      return movey > 0 ? 0 : 2;
+    }
+    if (movey == 0) {
+      return movex > 0 ? 1 : 3;
+    }
+
     let dir1 = 1;
     let dir2 = 0;
     if (movex > 0) dir1 = 1;
@@ -74,7 +82,7 @@
       typeof collisionMetal === "function" ? collisionMetal : () => true;
     if (
       direction == 0 &&
-      tank.Y - speed - 100 < 0 &&
+      tank.Y - speed - 50 < 0 &&
       collisionMetal(tank.X, tank.Y - speed, tankWidth)
     ) {
       return true;
@@ -191,14 +199,14 @@
       setTeameName();
       // 当前的坦克实例
       const currentTank = aMyTankCount.find(
-        cur => cur.id == (type === "A" ? 100 : 200)
+        (cur) => cur.id == (type === "A" ? 100 : 200)
       );
       // 敌方坦克， 特指另一个玩家坦克
       const enemyTank = aMyTankCount.find(
-        cur => cur.id == (type === "A" ? 200 : 100)
+        (cur) => cur.id == (type === "A" ? 200 : 100)
       );
       // 当前坦克挂了或者游戏直接结束了
-      if (!currentTank ) return teamName;
+      if (!currentTank) return teamName;
       if (type === "A" && player1Die) return teamName;
       if (type === "B" && player2Die) return teamName;
 
@@ -214,28 +222,45 @@
       //下面是方便读取的全局数据的别名
       // 所有的敌方坦克实例数组 第三关会将另一个玩家包含进去，其他则只是AI
       const enemyTanks = level === 3 ? [...aTankCount, enemyTank] : aTankCount;
-	  if(enemyTanks.length === 0) return teamName;
+      if (enemyTanks.length === 0) return teamName;
       // 当前屏幕下我的子弹实例集合
       const myBullets = type === "A" ? aMyBulletCount1 : aMyBulletCount2;
       // 当前屏幕下，另一个玩家子弹实例集合，只有第三关才会用到，其他关玩家子弹不需要躲，无伤
       const otherPlayerBullets =
         type === "B" ? aMyBulletCount1 : aMyBulletCount2;
-      const tankGap = 1;
+      const tankGap = 2;
       // 坦克移动方向， 初始为上 可调整。。。
       let moveDirection = 0;
 
       let moveX = 0,
         moveY = 0,
-        isDanger = false;
-
+        holdX = 0,
+        holdY = 0,
+        isHold = false,
+        isDanger = false,
+        isGo2Die = false;
+      let emtankNum = enemyTanks.length;
       // 开火
       for (const enemyTank of enemyTanks) {
         if (enemyTank === undefined) continue;
         const myDirection = currentTank.direction;
-        const gap = 100;
-        const dis = getTankDistance(currentTank, enemyTank);
+        const gap = 50;
 
-        if(dis < screenY * 2/3) {
+        const Ax = enemyTank.X - currentTank.X;
+        const Ay = currentTank.Y - enemyTank.Y;
+        const distance = Math.sqrt(Ax * Ax + Ay * Ay);
+
+        let shotGap = 400;
+        if (level == 3) emtankNum++;
+        if (emtankNum < 4) {
+          shotGap = 500;
+        } else if (emtankNum < 9) {
+          shotGap = 1000;
+        } else if (emtankNum < 12) {
+          shotGap = 2000;
+        }
+
+        if (distance < shotGap) {
           // 当前朝向上
           if (
             myDirection === 0 &&
@@ -273,10 +298,9 @@
             fire();
           }
         }
-
       }
 
-      // 躲避子弹，因为要区分第二关和第三关，所以封装为函数 ps：不用躲避所有的子弹只躲避当前有威胁的
+      // 躲避子弹，因为要区分第二关和第三关，所以封装为函数
       function avoidBullet(enemyBullets) {
         for (const bullet of enemyBullets) {
           const Ax = bullet.X - currentTank.X - 25;
@@ -290,18 +314,41 @@
           const outerDot = Ax * By - Ay * Bx;
 
           const distance = Math.sqrt(Ax * Ax + Ay * Ay);
-          const dangergap = Math.min(screenY / 5, screenX / 5);
-          // 相反方向
-          if (innerDot < 0 && Math.abs(outerDot) < 55 && distance < dangergap) {
+          let dangergap = 1200;
+
+          if (level == 3) emtankNum++;
+          if (emtankNum < 4) {
+            dangergap = 300;
+          } else if (emtankNum < 9) {
+            dangergap = 600;
+          } else if (emtankNum < 10) {
+            dangergap = 800;
+          }
+
+          if (innerDot < 0 && Math.abs(outerDot) < 60 && distance < dangergap) {
             let flag = Math.sign(outerDot);
-            if(flag == 0) flag = Math.random() > 0.5 ? 1 : -1;
-            let tempdir = flag * 90 + degree;
+            if (flag == 0) flag = Math.random() > 0.5 ? 1 : -1;
+            const tempdir = (flag * 90 + degree) % 360;
+            if (
+              Math.abs(Ax) > 31 &&
+              Math.abs(Ax) < 50 &&
+              Math.abs(Ay) > 31 &&
+              Math.abs(Ay) < 50
+            ) {
+              if (tempdir == 0 || tempdir == 180) {
+                holdX += degree2direction[tempdir];
+              } else {
+                holdY += degree2direction[tempdir];
+              }
+              isHold = true;
+            }
             const tempdis = 40 / Math.sqrt(Ax * Ax + Ay * Ay);
             const tempx = zero(Math.cos((tempdir / 180) * Math.PI));
             const tempy = zero(Math.sin((tempdir / 180) * Math.PI));
             moveX += tempx * tempdis;
             moveY += tempy * tempdis;
-            console.warn(" info", tempdir, moveX, moveY);
+
+            // console.warn(" info", tempdir, moveX, moveY);
             isDanger = true;
           }
         }
@@ -315,17 +362,46 @@
         avoidBullet(otherPlayerBullets);
       }
       if (isDanger) {
-        moveDirection = getTankDirection(currentTank, moveX, moveY);
+        if (isHold && holdY == 0 && holdX == 0) {
+          moveDirection = 4;
+        } else {
+          moveDirection = getTankDirection(currentTank, moveX, moveY);
+        }
       } else {
         let mindis = Infinity;
         let mindistank = enemyTanks[0];
+
+        let sameXorYDis = Infinity;
+        let sameXorYTank = enemyTanks[0];
+
         for (const enemyTank of enemyTanks) {
           if (enemyTank === undefined) continue;
           const curdis = getTankDistance(currentTank, enemyTank);
+
+          if (Math.abs(enemyTank.X - currentTank.X) < 50 && curdis < 300) {
+            diff = Math.abs(enemyTank.Y - currentTank.Y);
+            if (diff < sameXorYDis) {
+              sameXorYDis = diff;
+              sameXorYTank = enemyTank;
+            }
+          }
+
+          if (Math.abs(enemyTank.Y - currentTank.Y) < 50 && curdis < 300) {
+            diff = Math.abs(enemyTank.X - currentTank.X);
+            if (diff < sameXorYDis) {
+              sameXorYDis = diff;
+              sameXorYTank = enemyTank;
+            }
+          }
+
           if (curdis < mindis) {
             mindis = curdis;
             mindistank = enemyTank;
           }
+        }
+
+        if (sameXorYDis != Infinity) {
+          mindistank = sameXorYTank;
         }
 
         const TAx = mindistank.X - currentTank.X;
@@ -337,8 +413,10 @@
         }
 
         let isAway = false;
-
-        if (dist < 120) {  //和敌方坦克的距离
+        if (
+          (dist < (tankGap + 1.5) * 50 && myBullets.length === 5) ||
+          dist < tankGap * 50
+        ) {
           tdegree += 180;
           isAway = false;
         }
@@ -351,26 +429,28 @@
             if (isOutX || isOutY) {
               moveDirection = isOutX ? dir[1] : dir[0];
             } else {
-              if (isAway && enemyTanks.length > 3) {
-                moveDirection = Math.abs(TAx) > Math.abs(TAy) ? dir[1] : dir[0];
+              if (mindis > 300 && emtankNum >= 19) {
+                moveDirection = dir[0];
               } else {
-                moveDirection = Math.abs(TAx) > Math.abs(TAy) ? dir[0] : dir[1];
+                if (isAway && enemyTanks.length > 4) {
+                  moveDirection =
+                    Math.abs(TAx) > Math.abs(TAy) ? dir[1] : dir[0];
+                } else {
+                  moveDirection =
+                    Math.abs(TAx) > Math.abs(TAy) ? dir[0] : dir[1];
+                }
               }
             }
           }
         }
-
-        if (isAway) {
-          // console.log("away move direction ", tdegree, dir, moveDirection);
-        } else {
-          // console.log("close move direction ", tdegree, dir, moveDirection);
-        }
       }
+
+      if (!isDanger) console.warn(" mmovee", moveDirection);
       move(moveDirection);
       return teamName;
     },
     leave() {
       document.onkeyup(moveEvUp);
-    }
+    },
   };
 })("B", "GREEN-WORLD"); // 传A或者B， 队名
