@@ -64,7 +64,7 @@ window.playerB = new (class PlayerControl {
     var lateEnemy = undefined
 
     var misDistanceOfEnemy = currentTankWH * 100  //初始化离他最近的坦克
-    var secruitydistance = currentTankWH * 3     //安全距离
+    var secruitydistance = currentTankWH * 4     //安全距离
     var secruitylevel = enemyTanks.length       //坦克的数量
     var firedirectdis = 4                     // 根据最近坦克的距离大于firedirectdis*currentTankWH调整炮口
     var escapedir = 1                       // 距离小于多少时逃跑
@@ -93,6 +93,11 @@ window.playerB = new (class PlayerControl {
        firedirectdis = 3
        escapedir = 1
        fight = 2
+    }
+	if(!enemyTank)
+	{
+	   escapedir = 2
+	   fight = 3
     }
 
     if (moveDirection == undefined && escapenum < 5) {
@@ -358,6 +363,10 @@ window.playerB = new (class PlayerControl {
        else if ( (currentTankY + currentTankWH) > screenY) { moveDirection = this.#DIRECTION.UP}
        else { console.log("无法躲避")}
      }
+	 if( moveDirection == undefined  && (currentTankY + currentTankWH) >= screenY )
+      {
+        moveDirection = this.#DIRECTION.UP
+      }
     return moveDirection
   }
 

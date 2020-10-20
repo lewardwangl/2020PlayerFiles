@@ -94,6 +94,11 @@ window.playerA = new (class PlayerControl {
        escapedir = 1
        fight = 2
     }
+	if(!enemyTank)
+	{
+	   escapedir = 2
+	   fight = 3
+    }
 
     if (moveDirection == undefined && escapenum < 5) {
       //不移动可以考虑炮击
