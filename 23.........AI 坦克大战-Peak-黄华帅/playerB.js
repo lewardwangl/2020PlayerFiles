@@ -616,6 +616,17 @@ window.playerB = new (class PlayerControl {
         }
       }
     }
+    if(fireDirs.length <= 0){
+      if(latelyTank != undefined){
+        if(myTank.X > latelyTank.X){
+          fireDirs.push(this.#DIRECTION.LEFT);
+        }else {
+          fireDirs.push(this.#DIRECTION.RIGHT);
+        }
+      }else {
+        fireDirs.push(this.#DIRECTION.STOP);
+      }
+    }
     return latelyTank;
   }
 
