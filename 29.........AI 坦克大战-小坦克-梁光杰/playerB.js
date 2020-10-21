@@ -776,7 +776,7 @@ window.playerB = new (class PlayerControl {
               currentTankX,
               currentTankY,
               Dan,
-              85
+              100
             )
           }
           if (moveDirection == this.#DIRECTION.STOP) {
