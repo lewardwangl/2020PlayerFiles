@@ -1425,21 +1425,15 @@ window.playerA = new (class PlayerControl {
     const myBulletsNum = myBullets.length + this.myBulletsNum
     const _time = Date.now() 
     const c = _time - this.firetimestamp 
-    if (myBulletsNum < 2){
+    if (myBulletsNum < 3){
       this.firetimestamp = _time
       this._fire()
-    } else if (myBulletsNum < 3) {
+    } else  {
       if (c >= 200) {
         this.firetimestamp = _time
         this._fire()
       }
-    }else{
-      if(c >= 500){
-        this.firetimestamp = _time
-        this._fire()
-      }
     }
-   
   }
 
   _fire(){
