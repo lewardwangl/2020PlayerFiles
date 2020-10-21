@@ -336,7 +336,7 @@ window.playerA = new (class PlayerControl {
 
       const detection_dis_y = 3 * that.tank_wh       // 上下边界
       const wall_weight_y = 1
-
+      
       // /const detection_dis = 0.3 * 50
       //const wall_weight = 0.6
       let wall_move_x = 0
@@ -344,24 +344,22 @@ window.playerA = new (class PlayerControl {
       let x_scale = 0
       let y_scale = 0
       if ((mt_x1 - h1) < detection_dis_x) {
-        wall_move_x = 1 - (mt_x1 - h1) / detection_dis_x
+        wall_move_x = 1 - Math.pow((mt_x1 - h1) / detection_dis_x, 2)
       }else if ((mt_x1 + h1) > (screenX - detection_dis_x)) {
-        wall_move_x = -1 * (1 - ((screenX - (mt_x1 + h1)) / detection_dis_x))
+        wall_move_x = -1 * (1 - Math.pow(((screenX - (mt_x1 + h1)) / detection_dis_x), 2))
       }
       if ((mt_y1 - h1) < detection_dis_y) {
-        y_scale = 1 - ((mt_y1 - h1) / detection_dis_y)
+        y_scale = 1 - Math.pow((mt_y1 - h1) / detection_dis_y, 2)
       }else if ((mt_y1 + h1) > (screenY - detection_dis_y)) {
-        y_scale = -1 * (1 - (screenY - (mt_y1 + h1)) / detection_dis_y)
+        y_scale = -1 * (1 - Math.pow((screenY - (mt_y1 + h1)) / detection_dis_y, 2))
       }
       wall_move_x = x_scale * wall_weight_x
       wall_move_y = y_scale * wall_weight_y
-      if (isNaN(wall_move_x) || isNaN(wall_move_y)) {
-        debugger
-      }
       return [wall_move_x, wall_move_y]
     }
     let wall = aloof_wall()
     if (wall[0] != 0 || wall[1] != 0) { 
+      this.avoid_last_direct = undefined
       console.log("abbb2_avoid","aloof_wall",wall,mt_x1,mt_y1,screenX,screenY)
     }
     move_x += wall[0]

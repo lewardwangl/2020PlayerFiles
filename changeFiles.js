@@ -5,8 +5,8 @@
 
 const fs = require('fs')
 const path = require('path')
-const playerDirPath = path.resolve('./playerfiles/');
-const tankDirPath = path.resolve('./tank/js/');
+const playerDirPath = path.resolve('../playerfiles/');
+const tankDirPath = path.resolve('../tank/js/');
 
 const args = process.argv.splice(2)
 
@@ -27,17 +27,20 @@ function copyFile() {
               if (file.isDirectory()) {
                   const fileName  = file.name;
                   if(fileName.split('.')[0] === playerANum){
+                    console.log(`${playerDirPath}/${fileName}/playerA.js`)
                     // 拷贝文件
                     fs.copyFile(`${playerDirPath}/${fileName}/playerA.js`, `${tankDirPath}/playerA.js`, (err) => {
                       if (err) throw err;
+                      console.log('playerA替换成功')
                     });
-                    console.log(`${playerDirPath}/${fileName}/playerA.js`)
+                    
                   }else if(fileName.split('.')[0] === playerBNum){
+                    console.log(`${playerDirPath}/${fileName}/playerB.js`)
                     // 拷贝文件
                     fs.copyFile(`${playerDirPath}/${fileName}/playerB.js`, `${tankDirPath}/playerB.js`, (err) => {
                       if (err) throw err;
+                      console.log('playerB替换成功')
                     });
-                    console.log(`${playerDirPath}/${fileName}/playerB.js`)
                   }
               }
           });
