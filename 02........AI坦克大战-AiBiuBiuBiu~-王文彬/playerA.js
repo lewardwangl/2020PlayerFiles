@@ -7,6 +7,7 @@ window.playerA = new (class PlayerControl {
     this.firetimestamp = (new Date()).valueOf()
     this.priority = this.#DIRECTION.STOP;
 
+    this.finals = 0 //决赛
     this.tank_wh = 50
     this.bullet_wh = 10
 
@@ -18,12 +19,14 @@ window.playerA = new (class PlayerControl {
     this.avoid_last_direct = undefined
 
     this.attack_threshold_fire = this.tank_wh
-    this.attack_threshold_chase = this.tank_wh * 10
+    this.attack_threshold_chase = this.tank_wh * 8
     this.attack_next_fire_direct = undefined
     
     this.attack_chase_count = 0 // 同一个方向追赶次数
+    this.attack_chase_count_normal = 7
     this.attack_chase_direct = undefined
-
+    
+    this.abbbp_last_fire_index = 0
     this.abbbp_fire = 0
     this.abbbp_bullet_surplus = 0
     this.abbbp_last_attack_direct = undefined
@@ -44,13 +47,12 @@ window.playerA = new (class PlayerControl {
     
     if (!my_tank) return;
     this.abbbp_count += 1
-    //console.log("####### --------------------------------------------------------------", abbb_count,this.abbbp_count)
+    console.log("####### --------------------------------------------------------------",this.abbbp_count)
 
     var enemy_tanks = aTankCount
     var enemy_bullets = aBulletCount
     
-    let finals = 0
-    if (finals) { 
+    if (this.finals) { 
       do {
         const other_tank = this.type === "B" ? a_tank : b_tank
         const other_bullets = this.type === "B" ? aMyBulletCount1 : aMyBulletCount2
@@ -62,7 +64,7 @@ window.playerA = new (class PlayerControl {
         enemy_bullets = enemy_bullets.concat(other_bullets)
       } while(0)
     }
-
+    
     this.abbb2_land(my_tank, my_bullets, enemy_tanks, enemy_bullets)
     this.#setName()
   }
@@ -71,12 +73,11 @@ window.playerA = new (class PlayerControl {
     this.#setName()
     if (this.abbbp_fire) {
       this.abbbp_fire = 0
-      var c = (new Date()).valueOf()
-      //if (this.abbbp_count <= 30 || (c - this.firetimestamp > 500)) {
-        this.firetimestamp = c
+      if (this.abbbp_count > 30) {
         this.#fire();
-        //console.log("fire")
-      //}
+        this.abbbp_last_fire_index = this.abbbp_count
+        console.log("!!!fire!!!", this.abbbp_bullet_surplus)
+      }
     }
   }
 
@@ -97,29 +98,29 @@ window.playerA = new (class PlayerControl {
     //   this.abbbp_fire = idiot[0]
     //   console.log("####### 1 idiot attack #######",direct)
     // }else {
-      direct = this.abbb2_avoid(my_tank, enemy_bullets, enemy_tanks)
-      if (direct == undefined) {
-        let att = this.abbb2_attack(my_tank, my_bullets, enemy_tanks)
-        direct = att[1]
-        this.abbbp_fire = att[0]
-        //console.log("####### 2 attack #######",direct,this.abbbp_fire)
-      }else {
-        //console.log("this.attack_next_fire_direct land",this.attack_next_fire_direct)
-        if (this.attack_next_fire_direct != undefined && this.attack_chase_count >= 5) {
+      if ((direct = this.abbb2_avoid(my_tank, enemy_bullets, enemy_tanks)) != undefined) {
+        console.log("attack next fire direct=" + this.attack_next_fire_direct,this.attack_chase_count)
+        if (this.attack_next_fire_direct != undefined && this.attack_chase_count >= this.attack_chase_count_normal) {
           direct = this.attack_next_fire_direct
           this.abbbp_fire = 1
           this.attack_next_fire_direct = undefined
           this.attack_chase_count = 0
         }
-        if (direct == this.abbbp_last_attack_direct) { this.abbbp_fire = 1 }
-        //console.log("####### 3 avoid #######",direct,this.abbbp_fire)
+        if (direct == this.abbbp_last_attack_direct) { 
+          this.abbbp_last_attack_direct = undefined
+          this.abbbp_fire = 1 
+        }
+        console.log("####### 3 avoid #######",direct,this.abbbp_fire)
+      }else {
+        let att = this.abbb2_attack(my_tank, my_bullets, enemy_tanks)
+        direct = att[1]
+        this.abbbp_fire = att[0]
+        if (this.abbbp_fire) {
+          this.abbbp_last_attack_direct = direct
+        }
+        console.log("####### 2 attack #######",direct,this.abbbp_fire)
       }
     // }
-
-    if (this.abbbp_fire) {
-      this.abbbp_last_attack_direct = direct
-    }
-
     this.#move(direct)
   }
 
@@ -139,7 +140,7 @@ window.playerA = new (class PlayerControl {
     const mt_x1 = my_tank.X + this.tank_wh / 2.0
     const mt_y1 = screenY - (my_tank.Y + this.tank_wh / 2.0)
     const that = this
-    //console.log("abbb2_attack","my_xy=",mt_x1,mt_y1)
+    console.log("abbb2_attack","my_xy=",mt_x1,mt_y1)
     
     // var move_x = 0
     // var move_y = 0    
@@ -217,11 +218,16 @@ window.playerA = new (class PlayerControl {
     let min_dis = min_dis_ent.dis
     let move_x = min_dis_ent.pos_x
     let move_y = min_dis_ent.pos_y
-    //console.log("abbb2_attack","move_xy=" + move_x, move_y, "min_dis=" + min_dis)
+    console.log("abbb2_attack","move_xy=" + move_x, move_y, "min_dis=" + min_dis)
 
     var fire = 0
     var move_direction = undefined
     var type = ""
+    if (this.finals) {
+      let rock_move = this.abbbtool_detect_rock([mt_x1,mt_y1],[move_x,move_y],1)
+      move_x = rock_move[0]
+      move_y = rock_move[1]
+    }
     if (move_x != 0 || move_y != 0) {
       let normal_attack = 0
       if (min_dis > this.attack_threshold_chase) {
@@ -232,6 +238,12 @@ window.playerA = new (class PlayerControl {
         }else {
           move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
         }
+        if (this.attack_next_fire_direct == move_direction) {
+          this.attack_chase_count += 1
+        }else {
+          this.attack_chase_count = 0
+        }
+        this.attack_next_fire_direct == move_direction
       }else if (min_dis < this.tt_safe_min_dis) {
         // 远离他
         type = "avoid"
@@ -265,10 +277,10 @@ window.playerA = new (class PlayerControl {
         type = "fire"
         if (Math.abs(move_x) < this.attack_threshold_fire) {
           move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
-          fire = 1
+          fire = (this.abbbp_count - this.abbbp_last_fire_index > 5) ? 1 : 0
         }else if (Math.abs(move_y) < this.attack_threshold_fire) {
           move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
-          fire = 1
+          fire = (this.abbbp_count - this.abbbp_last_fire_index > 5) ? 1 : 0
         }else {
           // 靠近
           type = "slow chase"
@@ -281,7 +293,7 @@ window.playerA = new (class PlayerControl {
           }
           if (this.attack_chase_direct == undefined || this.attack_chase_direct == move_direction) {
             this.attack_chase_count += 1
-            if (this.attack_chase_count >= 5 && this.attack_next_fire_direct != undefined) {
+            if (this.attack_chase_count >= this.attack_chase_count_normal && this.attack_next_fire_direct != undefined) {
               move_direction = this.attack_next_fire_direct
               fire = 1
               this.attack_chase_direct = undefined
@@ -290,7 +302,7 @@ window.playerA = new (class PlayerControl {
           }
         }
       }
-      //console.log("abbb2_attack","final ~~~~", type, "move_direction=" + move_direction, "fire=" + fire)
+      console.log("abbb2_attack","final ~~~~", type, "move_direction=" + move_direction, "fire=" + fire)
     }else {
       move_direction = this.#DIRECTION.STOP
     }
@@ -313,36 +325,44 @@ window.playerA = new (class PlayerControl {
 
     var move_x = 0
     var move_y = 0
+    var max_move_xy = undefined
     var has_too_close_bullets = 0
 
-    //console.log("abbb2_avoid","my_xy=",mt_x1,mt_y1)
+    console.log("abbb2_avoid","my_xy=",mt_x1,mt_y1)
 
     function aloof_wall() {
-      const detection_dis_x = 0.5 * 0.5 * that.tank_wh // 左右边界
+      const detection_dis_x = 0.4 * 0.5 * that.tank_wh // 左右边界
       const wall_weight_x = 0.5
 
-      const detection_dis_y = 0.5 * that.tank_wh       // 上下边界
+      const detection_dis_y = 3 * that.tank_wh       // 上下边界
       const wall_weight_y = 1
 
       // /const detection_dis = 0.3 * 50
       //const wall_weight = 0.6
       let wall_move_x = 0
       let wall_move_y = 0
+      let x_scale = 0
+      let y_scale = 0
       if ((mt_x1 - h1) < detection_dis_x) {
-        wall_move_x = (1 - (mt_x1 - h1) / detection_dis_x) * wall_weight_x
+        wall_move_x = 1 - (mt_x1 - h1) / detection_dis_x
       }else if ((mt_x1 + h1) > (screenX - detection_dis_x)) {
-        wall_move_x = -1 * (1 - (screenX - (mt_x1 + h1)) / detection_dis_x) * wall_weight_x
+        wall_move_x = -1 * (1 - ((screenX - (mt_x1 + h1)) / detection_dis_x))
       }
       if ((mt_y1 - h1) < detection_dis_y) {
-        wall_move_y = (1 - (mt_y1 - h1) / detection_dis_y) * wall_weight_y
+        y_scale = 1 - ((mt_y1 - h1) / detection_dis_y)
       }else if ((mt_y1 + h1) > (screenY - detection_dis_y)) {
-        wall_move_y = -1 * (1 - (screenY - (mt_y1 + h1)) / detection_dis_y) * wall_weight_y
+        y_scale = -1 * (1 - (screenY - (mt_y1 + h1)) / detection_dis_y)
+      }
+      wall_move_x = x_scale * wall_weight_x
+      wall_move_y = y_scale * wall_weight_y
+      if (isNaN(wall_move_x) || isNaN(wall_move_y)) {
+        debugger
       }
       return [wall_move_x, wall_move_y]
     }
     let wall = aloof_wall()
     if (wall[0] != 0 || wall[1] != 0) { 
-      //console.log("abbb2_avoid","aloof_wall",wall,mt_x1,mt_y1,screenX,screenY)
+      console.log("abbb2_avoid","aloof_wall",wall,mt_x1,mt_y1,screenX,screenY)
     }
     move_x += wall[0]
     move_y += wall[1]
@@ -382,7 +402,7 @@ window.playerA = new (class PlayerControl {
       //console.log("abbb2_avoid","inner=" + inner, "outer=" + outer)
 
       if (inner < 0 && Math.abs(outer) < that.tb_safe_min_dis) {
-        //console.log("abbb2_avoid","-------pos_xy=",pos_x,pos_y, "spd_xy=", spd_x,spd_y,"bullet_xy=", enb_x, enb_y, "direct=" + enb.direction," radian=" + enb_radian)
+        console.log("abbb2_avoid","-------pos_xy=",pos_x,pos_y, "spd_xy=", spd_x,spd_y,"bullet_xy=", enb_x, enb_y, "direct=" + enb.direction," radian=" + enb_radian)
         // 预测可能命中我的子弹
         let tank_way = 0
         let bullet_way = 0
@@ -397,7 +417,7 @@ window.playerA = new (class PlayerControl {
                          Math.ceil((tank_way + (h1 + h2)) / my_tank.speed)]
         let bullet_time = [Math.ceil((bullet_way - (h1 + h2)) / enb.speed) , 
                            Math.ceil((bullet_way + (h1 + h2)) / enb.speed)]
-        //console.log("abbb2_avoid", "tank_time=" + tank_time[0], tank_time[1], "  bullet_time=" + bullet_time[0], bullet_time[1])
+        console.log("abbb2_avoid", "tank_time=" + tank_time[0], tank_time[1], "  bullet_time=" + bullet_time[0], bullet_time[1])
         if (tank_time[0] > 1 && (tank_time[0] > bullet_time[1] || tank_time[1] < bullet_time[0])) {
           // 无法命中
         }else {
@@ -405,9 +425,11 @@ window.playerA = new (class PlayerControl {
           let tmp_dis = Math.pow(pos_x, 2) + Math.pow(pos_y, 2)
           let tmp_move_x = Math.round(Math.cos(tmp_dir)) * (10000 / tmp_dis)
           let tmp_move_y = Math.round(Math.sin(tmp_dir)) * (10000 / tmp_dis)
-          //console.log("abbb2_avoid", "tmp_move_xy=" + tmp_move_x, tmp_move_y)
-          let denger = (Math.max(Math.abs(tmp_move_x), Math.abs(tmp_move_y)) > that.avoid_threshold_denger) ? 1 : 0
-          return [denger, tmp_move_x, tmp_move_y]
+          console.log("abbb2_avoid", "tmp_move_xy=" + tmp_move_x, tmp_move_y)
+          //if (Math.abs(tmp_move_x) >= that.avoid_threshold_safe || Math.abs(tmp_move_y) >= that.avoid_threshold_safe) {
+            let denger = (Math.max(Math.abs(tmp_move_x), Math.abs(tmp_move_y)) > that.avoid_threshold_denger) ? 1 : 0
+            return [denger, tmp_move_x, tmp_move_y]
+          //}
         }
       }
       return undefined
@@ -416,11 +438,20 @@ window.playerA = new (class PlayerControl {
       let r = avoid_one(enb)
       if (r) {
         has_too_close_bullets += r[0]
+        if (max_move_xy == undefined || (Math.abs(max_move_xy[0]) < Math.abs(move_x) || Math.abs(max_move_xy[1]) < Math.abs(move_y))) {
+          max_move_xy = [move_x, move_y]
+        }
         move_x += r[1]
         move_y += r[2]
       }
     })
-
+    if (max_move_xy != undefined && this.has_too_close_bullets > 0) {
+      if ((max_move_xy[0] * move_x + max_move_xy[1] * move_y) > 0) {
+        console.log("abbb2_avoid", "xxxx max_move_xy=" + max_move_xy, "move_xy="+move_x,move_y)
+        move_x = max_move_xy[0]
+        move_y = max_move_xy[1]
+      }
+    }
     var move_direction = undefined
     //if (move_x != 0 || move_y != 0) {
     if (Math.abs(move_x) >= this.avoid_threshold_safe || Math.abs(move_y) >= this.avoid_threshold_safe) {
@@ -457,7 +488,7 @@ window.playerA = new (class PlayerControl {
           }
         }
       })
-      //console.log("abbb2_avoid", "predict_bullets----", predict_bullets)
+      console.log("abbb2_avoid", "predict_bullets----", predict_bullets)
       predict_bullets.forEach(enb => {
         let r = avoid_one(enb)
         if (r) {
@@ -466,7 +497,20 @@ window.playerA = new (class PlayerControl {
           move_y += 0.25 * r[2]
         }
       })
-
+      if (predict_bullets > 0) {
+        if (max_move_xy != undefined && this.has_too_close_bullets > 0) {
+          if ((max_move_xy[0] * move_x + max_move_xy[1] * move_y) > 0) {
+            console.log("abbb2_avoid", "xxxx2 max_move_xy=" + max_move_xy, "move_xy="+move_x,move_y)
+            move_x = max_move_xy[0]
+            move_y = max_move_xy[1]
+          }
+        }
+      }
+      if (this.finals) {
+        let rock_move = this.abbbtool_detect_rock([mt_x1, mt_y1],[move_x, move_y],0)
+        move_x = rock_move[0]
+        move_y = rock_move[1]
+      }
       if (Math.abs(move_x) > Math.abs(move_y)) {
         move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
       }else {
@@ -489,7 +533,7 @@ window.playerA = new (class PlayerControl {
     }else {
       this.avoid_last_direct = undefined
     }
-    //console.log("abbb2_avoid final ==== ", "move_xy=" + move_x, move_y, "direct="+move_direction , "too_close_b=" + has_too_close_bullets)
+    console.log("abbb2_avoid final ==== ", "move_xy=" + move_x, move_y, "direct="+move_direction , "too_close_b=" + has_too_close_bullets)
     return move_direction
   }
 
@@ -538,6 +582,53 @@ window.playerA = new (class PlayerControl {
     }
     return move_direction
   }
+
+  /**
+   * 石头 [400, 149.25, 100, 100]
+   *      左上角        宽高
+  */
+  abbbtool_detect_rock(tank_center, move_vector, attack) {
+    const rocks = ametal
+
+    if (rocks != undefined) {
+
+      const rock_wh = 100
+      const rock_h1 = rock_wh / 2.0
+      const gap = this.tank_wh * 0.4 // tank 和 rock 边边的间隙
+      const max_gap = rock_h1 + gap + this.tank_wh / 2.0
+
+      for (let i = 0; i < rocks.length; i++) {
+        let rock = rocks[i]
+        let r_center_x = rock[0] + rock_h1
+        let r_center_y = (screenY - rock[1]) - rock_h1
+        let v_x = tank_center[0] - r_center_x
+        let v_y = tank_center[1] - r_center_y
+        if (Math.abs(v_x) <= max_gap && Math.abs(v_y) <= max_gap) {
+          let inner = move_vector[0] * v_x + move_vector[1] * v_y
+          console.log("abbbtool detect rock","tank_center"+tank_center,"move_vector"+move_vector,"v_x"+v_x,"v_y"+v_y,"inner"+inner)
+          if (inner <= 0) {
+            if (Math.abs(v_x) < Math.abs(v_y)) {
+              move_vector[1] = 0
+              if (attack) {
+                //move_vector[0] = (tank_center[0] > r_center_x) ? 1 : -1
+                move_vector[0] = Math.sign(move_vector[0]) * 1
+              }
+            }else if (Math.abs(v_x) > Math.abs(v_y)) {
+              move_vector[0] = 0
+              if (attack) {
+                //move_vector[1] = (tank_center[1] > r_center_y) ? 1 : -1
+                move_vector[1] = Math.sign(move_vector[1]) * 1
+              }
+            }
+          }
+          break
+        }
+      }
+    }
+
+    return move_vector
+  }
+
 
   type;
   // private
@@ -591,7 +682,7 @@ window.playerA = new (class PlayerControl {
   #setName() {
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}barName`
-    ).value = "AiBiuBiuBiu~"
+    ).value = "AiBiuBiuBiu~"//this.abbbp_count
     document.getElementById(
       `Player${this.type === "A" ? 1 : 2}Name`
     ).textContent = "AiBiuBiuBiu~"
@@ -641,6 +732,7 @@ window.playerA = new (class PlayerControl {
     {
       for(var i = 0;i<metal.length;i++)
       {
+        debugger
         if(x>metal[i][0] - r && x < metal[i][0] + metal[i][2] && y > metal[i][1]-r && y<metal[i][1] + metal[i][3])
         {
           return true

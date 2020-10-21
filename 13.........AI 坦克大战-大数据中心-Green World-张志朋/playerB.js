@@ -193,6 +193,75 @@
     }
     return flag;
   }
+  //检查是否在墙附近 阈值wallGap=50,若是且有危险，则向墙相反方向移动
+  function checkNearWall(tank){
+    console.info("checkNearWall begin ",tank.Y);
+    let wallDirection=-1;
+    let wallGap=50;
+    let wallTankGap=120;
+
+    //判断坦克是否在边界
+    let xNow = tank.X+25;
+    let yNow = tank.Y+25;
+    if(xNow<=wallGap){
+      wallDirection=3;
+    }
+    else if(screenX-xNow<=wallGap){
+      wallDirection=1;
+    }
+    else if(yNow<=wallGap){
+      wallDirection=0;
+    }
+    else if(screenY-yNow<=wallGap){
+      wallDirection=2;
+    }
+    else{
+      return -1;
+    }
+    console.info("near wall ",wallDirection)
+    for(const bullet of aBulletCount){
+      let xNow=bullet.X;
+      let yNow=bullet.Y;
+
+      const Ax = bullet.X - tank.X - 25;
+      const Ay = tank.Y + 25 - bullet.Y;
+
+      const degree = direction2degree[bullet.direction];
+      const Bx = zero(Math.cos((degree / 180) * Math.PI) * 1);
+      const By = zero(Math.sin((degree / 180) * Math.PI) * 1);
+      const innerDot = Ax * Bx + Ay * By;
+
+      console.info("innerdot ",innerDot,"x distance", Math.abs(tank.X+25-bullet.X));
+      if(innerDot<0){
+        if (wallDirection===3 && xNow<=wallGap+30){
+          //wallBullet3.push(bullet);
+          if(Math.abs(tank.Y+25-bullet.Y)<wallTankGap){
+            console.info("wall, bullet too close! move direction ",1);
+            return 1;
+          }
+        }else if(wallDirection===1 && screenX-xNow<=wallGap+30){
+          //wallBullet1.push(bullet);
+          if(Math.abs(tank.Y+25-bullet.Y)<wallTankGap){
+            console.info("wall, bullet too close! move direction ",3);
+            return 3;
+          }
+        }else if(wallDirection===0 && yNow<=wallGap+30){
+          //wallBullet0.push(bullet);
+          if(Math.abs(tank.X+25-bullet.X)<wallTankGap){
+            console.info("wall, bullet too close! move direction ",2);
+            return 2;
+          }
+        }else if(wallDirection===2 && screenY-yNow<=wallGap+30){
+          //wallBullet2.push(bullet);
+          if(Math.abs(tank.X+25-bullet.X)<wallTankGap){
+            console.info("wall, bullet too close! move direction ",0);
+            return 0;
+          }
+        }
+      }
+    }
+    return -1;
+  }
 
   window[`player${type}`] = {
     land() {
@@ -228,7 +297,7 @@
       // 当前屏幕下，另一个玩家子弹实例集合，只有第三关才会用到，其他关玩家子弹不需要躲，无伤
       const otherPlayerBullets =
         type === "B" ? aMyBulletCount1 : aMyBulletCount2;
-      const tankGap = 2;
+      const tankGap = 1.1;
       // 坦克移动方向， 初始为上 可调整。。。
       let moveDirection = 0;
 
@@ -240,6 +309,31 @@
         isDanger = false,
         isGo2Die = false;
       let emtankNum = enemyTanks.length;
+
+      //计算另外一侧坦克的质心(x,y)，如果另一侧坦克数量>=5 且我方坦克的高度在y±d(d=150)内 且当前坦克方向水平朝向另外一侧，则向另外一侧发射子弹。并且高度间距小于c=50内的子弹不重复发射
+      if ((type==="A" && currentTank.direction===1)||(type==="B" && currentTank.direction===3)){
+        let otherY=0;
+        let otherCnt=0;
+        for(const enemyTank of enemyTanks){
+          //ai坦克与我方坦克不在同一侧
+          if((enemyTank.X-screenX/2)*(currentTank.X-screenX/2)<0){
+            otherY += enemyTank.Y;
+            otherCnt += 1;
+          }
+        }
+        if(otherCnt>=5){
+          let barycenter = otherY/otherCnt;
+          if (Math.abs(currentTank.Y-barycenter)<150){
+            for(let bullet of myBullets){
+              if(bullet.direction===currentTank.direction && Math.abs(bullet.Y-currentTank.Y)<50){
+                fire();
+                break;
+              }
+            }
+          }
+        }
+      }
+
       // 开火
       for (const enemyTank of enemyTanks) {
         if (enemyTank === undefined) continue;
@@ -250,14 +344,23 @@
         const Ay = currentTank.Y - enemyTank.Y;
         const distance = Math.sqrt(Ax * Ax + Ay * Ay);
 
+        // let shotGap = 400;
+        // if (level == 3) emtankNum++;
+        // if (emtankNum < 4) {
+        //   shotGap = 500;
+        // } else if (emtankNum < 9) {
+        //   shotGap = 1000;
+        // } else if (emtankNum < 12) {
+        //   shotGap = 2000;
+        // }
         let shotGap = 400;
         if (level == 3) emtankNum++;
         if (emtankNum < 4) {
-          shotGap = 500;
+          shotGap = 2000;
         } else if (emtankNum < 9) {
           shotGap = 1000;
         } else if (emtankNum < 12) {
-          shotGap = 2000;
+          shotGap = 500;
         }
 
         if (distance < shotGap) {
@@ -314,18 +417,18 @@
           const outerDot = Ax * By - Ay * Bx;
 
           const distance = Math.sqrt(Ax * Ax + Ay * Ay);
-          let dangergap = 1200;
+          let dangergap = 400;
 
           if (level == 3) emtankNum++;
-          if (emtankNum < 4) {
-            dangergap = 300;
-          } else if (emtankNum < 9) {
-            dangergap = 600;
+          if (emtankNum < 3) {
+            dangergap = 100;
+          } else if (emtankNum < 7) {
+            dangergap = 200;
           } else if (emtankNum < 10) {
-            dangergap = 800;
+            dangergap = 300;
           }
 
-          if (innerDot < 0 && Math.abs(outerDot) < 60 && distance < dangergap) {
+          if ((innerDot > 0 && Math.abs(outerDot)>25 && distance<45) || (innerDot < 0 && Math.abs(outerDot) < 60 && distance < dangergap)) {
             let flag = Math.sign(outerDot);
             if (flag == 0) flag = Math.random() > 0.5 ? 1 : -1;
             const tempdir = (flag * 90 + degree) % 360;
@@ -342,7 +445,7 @@
               }
               isHold = true;
             }
-            const tempdis = 40 / Math.sqrt(Ax * Ax + Ay * Ay);
+            const tempdis = 40 / (Ax * Ax + Ay * Ay);
             const tempx = zero(Math.cos((tempdir / 180) * Math.PI));
             const tempy = zero(Math.sin((tempdir / 180) * Math.PI));
             moveX += tempx * tempdis;
@@ -353,18 +456,31 @@
           }
         }
       }
-
-      // 躲敌方子弹、电脑
-      avoidBullet(aBulletCount);
-      // 决赛也需要躲避另一个玩家的子弹
-      if (level === 3) {
-        //躲另一个玩家子弹
-        avoidBullet(otherPlayerBullets);
+      
+      directionNearWall = checkNearWall(currentTank);
+      console.info("ccccccheckwall",directionNearWall);
+      flagWall=false;
+      //不在墙附近，且暂时无危险，则执行其他策略
+      if(directionNearWall===-1){
+        isDanger = false;
+        // 躲敌方子弹、电脑
+        avoidBullet(aBulletCount);
+        // 决赛也需要躲避另一个玩家的子弹
+        if (level === 3) {
+          //躲另一个玩家子弹
+          avoidBullet(otherPlayerBullets);
+        }
+      }//有危险，返回指定的运动方向
+      else{
+        flagWall=true;
+        isDanger = true;
+        moveDirection=directionNearWall;
       }
+
       if (isDanger) {
         if (isHold && holdY == 0 && holdX == 0) {
           moveDirection = 4;
-        } else {
+        } else if(!flagWall) {
           moveDirection = getTankDirection(currentTank, moveX, moveY);
         }
       } else {
@@ -430,7 +546,7 @@
               moveDirection = isOutX ? dir[1] : dir[0];
             } else {
               if (mindis > 300 && emtankNum >= 19) {
-                moveDirection = dir[0];
+                moveDirection = dir[1];
               } else {
                 if (isAway && enemyTanks.length > 4) {
                   moveDirection =

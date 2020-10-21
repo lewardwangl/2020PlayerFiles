@@ -401,8 +401,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 0,
                   currentTankY - thresholdvalue,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  24, thresholdvalue, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  24, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){
@@ -414,8 +414,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 25,
                   currentTankY - thresholdvalue,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  25, thresholdvalue, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  25, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){
@@ -446,8 +446,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 0,
                   currentTankY + 50 + thresholdvalue,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  24, thresholdvalue, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  24, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){
@@ -459,8 +459,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 25,
                   currentTankY + 50 + thresholdvalue,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  25, thresholdvalue, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  25, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){
@@ -498,8 +498,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 50 + thresholdvalue,
                   currentTankY + 0,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  thresholdvalue, 24, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  thresholdvalue, 24, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){
@@ -511,8 +511,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 50 + thresholdvalue,
                   currentTankY + 25,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  thresholdvalue, 25, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  thresholdvalue, 25, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){
@@ -541,8 +541,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX - thresholdvalue,
                   currentTankY + 0,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  thresholdvalue, 24, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  thresholdvalue, 24, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){
@@ -554,8 +554,8 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX - thresholdvalue,
                   currentTankY + 25,
-                  bullet.X - 1 , bullet.Y - 1 ,
-                  thresholdvalue, 25, 1, 1
+                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
+                  thresholdvalue, 25, bulletWH * 1.2, bulletWH * 1.2
                 );                
                 
                 if(dis2){

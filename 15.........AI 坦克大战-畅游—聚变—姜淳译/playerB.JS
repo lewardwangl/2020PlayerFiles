@@ -106,11 +106,11 @@ window.playerB = new (class PlayerControl {
     findTactics(currentTankWH, currentTankX, currentTankY, enemyTanks, enemyTank, Bullet, moveDirection, currentTankDirect, cx, cy) {
         var lateEnemy = undefined
         var misDistanceOfEnemy = currentTankWH * 100
-        var secruitydistance = currentTankWH * 6
+        var secruitydistance = currentTankWH * 3.5
         var secruitylevel = enemyTanks.length
-        var firedirectdis = 4
-        var escapedir = 4
-        var fight = 6
+        var firedirectdis = 3
+        var escapedir = 3
+        var fight = 5
         var escapenum = 0
 
         for (const enemy of enemyTanks) {
@@ -146,13 +146,13 @@ window.playerB = new (class PlayerControl {
         // }
         if (secruitylevel <= 2 && undefined != enemyTank)//是否可以加速打电脑
         {
-            firedirectdis = 3//炮击系数
-            escapedir = 3//逃跑系数
-            fight = 4
+            firedirectdis = 1//炮击系数
+            escapedir = 1//逃跑系数
+            fight = 3
         }
 
         if (secruitylevel <= 1) {
-            firedirectdis = 3//炮击系数
+            firedirectdis = 1//炮击系数
             escapedir = 1//逃跑系数
             fight = 0
         }

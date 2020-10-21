@@ -7,7 +7,7 @@ window.playerA = new (class PlayerControl {
     this.firetimestamp = (new Date()).valueOf()
     this.priority = this.#DIRECTION.STOP;
     this.flag=10;
-  }
+  }1
   land() {
     // 当前的坦克实例
     var cur = undefined
@@ -58,7 +58,7 @@ window.playerA = new (class PlayerControl {
     this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,this.#DIRECTION.STOP,);
 
     this.#calcBulletDistance(enemyBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
-    this.#calcBulletDistance(eBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
+    //this.#calcBulletDistance(eBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
     moveDirection = this.#avoidBullet(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection)
 
     var lateEnemy = undefined
@@ -67,7 +67,7 @@ window.playerA = new (class PlayerControl {
     var secruitydistance = currentTankWH * 4     //安全距离
     var secruitylevel = enemyTanks.length       //坦克的数量
     var firedirectdis = 4                     // 根据最近坦克的距离大于firedirectdis*currentTankWH调整炮口
-    var escapedir = 1                       // 距离小于多少时逃跑
+    var escapedir = 1.1                       // 距离小于多少时逃跑
     var fight = 3                           // 大于多少个安全距离时追击
     var escapenum = 0                      // 逃跑系数
 
@@ -91,7 +91,7 @@ window.playerA = new (class PlayerControl {
     if(secruitylevel<=4)  //是否可以加速打电脑
     {
        firedirectdis = 3
-       escapedir = 1
+       escapedir = 1.1
        fight = 2
     }
     if(!enemyTank){
@@ -140,10 +140,10 @@ window.playerA = new (class PlayerControl {
         }
         else if (dis < escapedir * currentTankWH) {  //逃跑 判断条件放宽 STOP 改成RIGHT
           if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.DOWN, currentTankWH
-          ) &&  this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20] && this.#DIRECTION.UP!=Bullet[22] && this.#DIRECTION.UP!=Bullet[24]){
+          )/*(disX < disY) && (lateEnemy.Y < currentTankY) &&*/ &&  this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20] && this.#DIRECTION.UP!=Bullet[22] && this.#DIRECTION.UP!=Bullet[24] &&  this.#DIRECTION.DOWN!=Bullet[6]){
             moveDirection = this.#DIRECTION.DOWN;
-          } else if ( !this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.UP, currentTankWH
-          ) && this.#DIRECTION.RIGHT != Bullet[4] && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.LEFT != Bullet[8] && this.#DIRECTION.DOWN!=Bullet[2] && this.#DIRECTION.RIGHT!=Bullet[0]) {
+          }else if ( !this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.UP, currentTankWH
+          )/*(disX < disY) && (lateEnemy.Y >= currentTankY) &&*/  && this.#DIRECTION.RIGHT != Bullet[4] && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.LEFT != Bullet[8] && this.#DIRECTION.DOWN!=Bullet[2] && this.#DIRECTION.DOWN!=Bullet[0] && this.#DIRECTION.UP!=Bullet[18]) {
             moveDirection = this.#DIRECTION.UP;
           } else if ( !this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH
           ) &&  this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23] && this.#DIRECTION.LEFT!=Bullet[14] && this.#DIRECTION.LEFT!=Bullet[14]) {
@@ -158,7 +158,7 @@ window.playerA = new (class PlayerControl {
           }
         this.priority = moveDirection
         if (moveDirection == undefined ){
-           moveDirection= this.#DIRECTION.UP;
+           moveDirection= this.#DIRECTION.RIGHT;
         }
         var c = (new Date()).valueOf()
         if (c - this.firetimestamp > 100) {
@@ -341,6 +341,10 @@ window.playerA = new (class PlayerControl {
        else if ( (currentTankY + currentTankWH) > screenY) { moveDirection = this.#DIRECTION.UP}
        else { console.log("无法躲避")}
      }
+    if( moveDirection == undefined  && (currentTankY + currentTankWH) >= screenY )
+    {
+       moveDirection = this.#DIRECTION.UP
+    }
     return moveDirection
   }
 

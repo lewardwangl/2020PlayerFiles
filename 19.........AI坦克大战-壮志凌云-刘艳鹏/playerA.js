@@ -56,24 +56,24 @@ window.playerA = new (class PlayerControl {
     let Bullet = new Array(this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP,
       this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP);
     this.#calcBulletDistance(enemyBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
-    this.#calcBulletDistance(eBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
+    // this.#calcBulletDistance(eBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
     moveDirection = this.#avoidBullet(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection)
     var lateEnemy = undefined
     var maxEnemyX = 0                  //本区域敌方坦克Y轴最大值
     var maxEnemyY = 0                             //本区域敌方坦克X轴最大值
     var misDistanceOfEnemy = currentTankWH * 100  //初始化离他最近的坦克
-    var secruitydistance = currentTankWH * 3      //安全距离
+    var secruitydistance = currentTankWH * 4      //安全距离
     var secruitylevel = enemyTanks.length         //坦克的数量
     var firedirectdis = 4                     // 根据最近坦克的距离大于firedirectdis*currentTankWH调整炮口
-    var escapedir = 1                             // 距离小于多少时逃跑
+    var escapedir = 1.2                             // 距离小于多少时逃跑
     var fight = 3                                 // 大于多少个安全距离时追击
     var escapenum = 0                             // 逃跑系数
 
 
-    if (secruitylevel <= 4)
+    if (secruitylevel <= 4 && enemyTank != undefined)
     {
       firedirectdis = 3
-      escapedir = 1
+      escapedir = 1.2
       fight = 2
     }/* else {
       firedirectdis = 1
@@ -82,13 +82,13 @@ window.playerA = new (class PlayerControl {
     }*/
     else if (secruitylevel > 10 && maxEnemyY > cy) {
       firedirectdis = 3
-      escapedir = 1
-      fight = 3
+      escapedir = 1.2
+      fight = 2
     }
     else if (secruitylevel > 10 && maxEnemyY <= cy) {
       firedirectdis = 3
-      escapedir = 1
-      fight = 2
+      escapedir = 1.2
+      fight = 3
     }
 
     // if(undefined != enemyTank)
@@ -263,7 +263,7 @@ window.playerA = new (class PlayerControl {
           }
           console.log("战术前进", moveDirection)
         }
-        else if (dis < escapedir * currentTankWH/* || myBullets.length === 5*/) //逃跑
+        else if (dis <= escapedir * currentTankWH/* || myBullets.length === 5*/) //逃跑
         {
           if ((disX < disY) && (lateEnemy.Y < currentTankY) && !this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.DOWN, currentTankWH) && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20]) {
             moveDirection = this.#DIRECTION.DOWN;

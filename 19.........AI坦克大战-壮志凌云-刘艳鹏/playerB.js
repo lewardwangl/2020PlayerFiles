@@ -59,24 +59,24 @@ window.playerB = new (class PlayerControl {
     let Bullet = new Array(this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP,
       this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP, this.#DIRECTION.STOP);
     this.#calcBulletDistance(enemyBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
-    this.#calcBulletDistance(eBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
+    // this.#calcBulletDistance(eBullets, currentTankX, currentTankY, Bullet, currentTankWH, bulletWH)
     moveDirection = this.#avoidBullet(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection)
     var lateEnemy = undefined
     var maxEnemyX = 0                  //本区域敌方坦克Y轴最大值
     var maxEnemyY = 0                             //本区域敌方坦克X轴最大值
     var misDistanceOfEnemy = currentTankWH * 100  //初始化离他最近的坦克
-    var secruitydistance = currentTankWH * 4     //安全距离
+    var secruitydistance = currentTankWH * 5     //安全距离
     var secruitylevel = enemyTanks.length       //坦克的数量
     var firedirectdis = 4                     // 根据最近坦克的距离大于firedirectdis*currentTankWH调整炮口
-    var escapedir = 1                       // 距离小于多少时逃跑
+    var escapedir = 1.2                       // 距离小于多少时逃跑
     var fight = 3                           // 大于多少个安全距离时追击
     var escapenum = 0                      // 逃跑系数
 
 
-    if (secruitylevel <= 4)
+    if (secruitylevel <= 4 && enemyTank != undefined)
     {
       firedirectdis = 3
-      escapedir = 1
+      escapedir = 1.2
       fight = 2
     }/* else {
       firedirectdis = 1
@@ -85,13 +85,13 @@ window.playerB = new (class PlayerControl {
     }*/
     else if (secruitylevel > 10 && maxEnemyY > cy) {
       firedirectdis = 3
-      escapedir = 1
-      fight = 3
+      escapedir = 1.2
+      fight = 2
     }
     else if (secruitylevel > 10 && maxEnemyY <= cy) {
       firedirectdis = 3
-      escapedir = 1
-      fight = 2
+      escapedir = 1.2
+      fight = 3
     }
 
     // if(undefined != enemyTank)
@@ -153,39 +153,6 @@ window.playerB = new (class PlayerControl {
             }
             fireFire(screenX - currentTankX)
             console.log("右开火")
-          }
-        }
-      }
-    }
-    const fireTheHole1 = (e) => {
-      var disX = Math.abs(e.X - currentTankX)
-      var disY = Math.abs(e.Y - currentTankY)
-      var dis = this.#calcTwoPointDistance(currentTankX, currentTankY, e.X, e.Y)
-
-      if (dis <= firedirectdis * currentTankWH) {
-        if ((disX <= disY) && (e.Y < currentTankY) && this.#DIRECTION.RIGHT != Bullet[4] && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.LEFT != Bullet[8]) {
-          if (currentTankDirect != this.#DIRECTION.UP) {
-            moveDirection = this.#DIRECTION.UP;
-            fireFire(100)
-            console.log("炮口调整: 上", moveDirection)
-          }
-        } else if ((disX < disY) && (e.Y >= currentTankY) && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20]) {
-          if (currentTankDirect != this.#DIRECTION.DOWN) {
-            moveDirection = this.#DIRECTION.DOWN;
-            fireFire(100)
-            console.log("炮口调整： 下", moveDirection)
-          }
-        } else if ((disX > disY) && (e.X < currentTankX) && this.#DIRECTION.DOWN != Bullet[1] && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17] && this.#DIRECTION.UP != Bullet[21]) {
-          if (currentTankDirect != this.#DIRECTION.LEFT) {
-            moveDirection = this.#DIRECTION.LEFT;
-            fireFire(100)
-            console.log("炮口调整： 左", moveDirection)
-          }
-        } else if ((disX >= disY) && (e.X >= currentTankX) && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23]) {
-          if (currentTankDirect != this.#DIRECTION.RIGHT) {
-            moveDirection = this.#DIRECTION.RIGHT;
-            fireFire(200)
-            console.log("炮口调整： 右", moveDirection)
           }
         }
       }

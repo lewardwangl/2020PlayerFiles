@@ -69,9 +69,12 @@ window.playerB = new (class PlayerControl {
     //坦克子弹预测范围半径大小
     const scanDis = 8*tankWH;
 
+    //已经尝试移动过的方向
+    const alreadyTryDirs = [];
+
     //中心区域方向
     const centerDirs = [];
-    this.#initCenterDirs(myTank, cx, cy, tankWH, centerDirs);
+    this.#initCenterDirs(myTank, tankWH, 0.8, centerDirs);
     this.#initCenterDirsMetal(myTank, tankWH, centerDirs);
 
     //坦克附件范围内的子弹
@@ -85,13 +88,15 @@ window.playerB = new (class PlayerControl {
     //追击坦克靠近的最小距离
     let atkDis = latelyTank === enTank ? (2.5*tankWH) : (3.5*tankWH);
 
+    //moveDirection = this.#avoidTank(myTank, centerDirs, scanBullets, tankWH, bulletWH, alreadyTryDirs);
+
     //如果有靠近的坦克，则优先逃离
-    if(escapeDirs.length > 0){
-      moveDirection = this.#avoidTank(myTank, centerDirs, escapeDirs, scanBullets, tankWH, bulletWH);
+    if(moveDirection == undefined){
+      moveDirection = this.#avoidTank(myTank, escapeDirs, scanBullets, tankWH, bulletWH, alreadyTryDirs);
     }
     //追击敌方坦克
     if(moveDirection == undefined) {
-      moveDirection = this.#attackTank(atkDis, myTank, latelyTank, tankWH, bulletWH, scanBullets, myAiTanks.length, centerDirs, enTank, enBullets, escapeDirs);
+      moveDirection = this.#attackTank(atkDis, myTank, latelyTank, tankWH, bulletWH, scanBullets, myAiTanks, enTank, enBullets, alreadyTryDirs);
     }
     //可以停留，直接开炮
     if(moveDirection == undefined) {
@@ -111,8 +116,10 @@ window.playerB = new (class PlayerControl {
         }
         let fireDir = tmpDirs[Math.floor(Math.random()*tmpDirs.length)];
         tmpDirs = tmpDirs.filter(item => item != fireDir);
-        if($.inArray(fireDir, escapeDirs) >= 0){
+        if($.inArray(fireDir, alreadyTryDirs) >= 0){
           continue;
+        }else {
+          alreadyTryDirs.push(fireDir);
         }
         moveDirection = this.#tryMoveTank(myTank, fireDir, scanBullets, tankWH, bulletWH);
         if(moveDirection != undefined){
@@ -122,7 +129,7 @@ window.playerB = new (class PlayerControl {
     }
     //躲避子弹
     if(moveDirection == undefined){
-      moveDirection = this.#avoidBullet(myTank, centerDirs, scanBullets, tankWH, bulletWH, escapeDirs);
+      moveDirection = this.#avoidBullet(myTank, scanBullets, tankWH, bulletWH, alreadyTryDirs);
     }
     //开火
     if($.inArray(myTank.direction, fireDirs) >= 0){
@@ -571,18 +578,41 @@ window.playerB = new (class PlayerControl {
         }
       }
       //当防御范围内的坦克数量过多，则指定逃离方向
-      if(scopeTanks.length >= 5){
+      if(scopeTanks.length > 4 && escapeDirs.length == 0){
+        let dirNum_T = 0;
+        let dirNum_D = 0;
+        let dirNum_L = 0;
+        let dirNum_R = 0;
+        let dirX;
+        let dirY;
         for(let bt of scopeTanks){
-          if(myTank.X >= bt.X && $.inArray(this.#DIRECTION.RIGHT, escapeDirs) < 0){
-            escapeDirs.push(this.#DIRECTION.RIGHT);
-          }else if(myTank.X < bt.X && $.inArray(this.#DIRECTION.LEFT, escapeDirs) < 0){
-            escapeDirs.push(this.#DIRECTION.LEFT);
+          if(myTank.X > bt.X){
+            dirNum_R++;
+          }else{
+            dirNum_L++;
           }
-          if(myTank.Y >= bt.Y && $.inArray(this.#DIRECTION.DOWN, escapeDirs) < 0){
-            escapeDirs.push(this.#DIRECTION.DOWN);
-          }else if(myTank.Y < bt.Y && $.inArray(this.#DIRECTION.UP, escapeDirs) < 0){
-            escapeDirs.push(this.#DIRECTION.UP);
+          if(myTank.Y >= bt.Y){
+            dirNum_D++;
+          }else{
+            dirNum_T++;
           }
+        }
+        if(dirNum_T > dirNum_D){
+          dirY = this.#DIRECTION.UP;
+        }else {
+          dirY = this.#DIRECTION.DOWN;
+        }
+        if(dirNum_L > dirNum_R){
+          dirX = this.#DIRECTION.LEFT;
+        }else {
+          dirX = this.#DIRECTION.RIGHT;
+        }
+        if(Math.max(dirNum_T, dirNum_D) > Math.max(dirNum_L, dirNum_R)){
+          escapeDirs.push(dirY);
+          escapeDirs.push(dirX);
+        }else {
+          escapeDirs.push(dirX);
+          escapeDirs.push(dirY);
         }
       }
     }
@@ -598,45 +628,47 @@ window.playerB = new (class PlayerControl {
   }
 
   //中心区域方向
-  #initCenterDirs(myTank, centerX, centerY, tankWH, centerDirs){
-
-    let disX = centerX - (myTank.X + tankWH/2);
-    let disY = centerY - (myTank.Y + tankWH/2);
+  #initCenterDirs(myTank, tankWH, whNum, centerDirs){
 
     let dirX = undefined;
     let dirY = undefined;
-
-    if(disX > 0){
+    let disX = undefined;
+    let disY = undefined;
+    if(myTank.X < whNum*tankWH){
       dirX = this.#DIRECTION.RIGHT;
-    }else {
+      disX = myTank.X;
+    }else if(myTank.X > screenX - (whNum+1)*tankWH){
       dirX = this.#DIRECTION.LEFT;
+      disX = screenX - (myTank.X+tankWH);
     }
-    if(disY > 0){
+    if(myTank.Y < whNum*tankWH){
       dirY = this.#DIRECTION.DOWN;
-    }else {
+      disY = myTank.Y;
+    }else if(myTank.Y > screenY - (whNum+1)*tankWH){
       dirY = this.#DIRECTION.UP;
+      disY = screenY - (myTank.Y+tankWH);
     }
-    if(Math.abs(disX) > centerX-tankWH && Math.abs(disY) > centerY-tankWH){
-      if(centerX - Math.abs(disX) < centerY - Math.abs(disY)){
+    if(dirX != undefined && dirY != undefined){
+      if(disX < disY){
         centerDirs.push(dirX);
         centerDirs.push(dirY);
       }else {
         centerDirs.push(dirY);
         centerDirs.push(dirX);
       }
-    }else if(Math.abs(disX) > centerX-tankWH){
+    }else if(dirX != undefined){
       centerDirs.push(dirX);
-    }else if(Math.abs(disY) > centerY-tankWH){
+    }else if(dirY != undefined){
       centerDirs.push(dirY);
     }
   }
 
   //躲避子弹，优先中心区域
-  #avoidBullet(myTank, centerDirs, bullets, tankWH, bulletWH, escapeDirs){
+  #avoidBullet(myTank, bullets, tankWH, bulletWH, alreadyTryDirs){
 
     let moveDir = undefined;
-    let dirs = $.extend(true, [], centerDirs);
-
+    let dirs = [];
+    this.#initCenterDirs(myTank, tankWH, 3, dirs);
     let tmpDir = myTank.direction;
     if(tmpDir == undefined){
       tmpDir = Math.floor(Math.random()*4);
@@ -648,43 +680,33 @@ window.playerB = new (class PlayerControl {
       }
     }
     for(let dir of dirs){
-      if($.inArray(dir, escapeDirs) >=0){
+      if($.inArray(dir, alreadyTryDirs) >= 0){
         continue;
+      }else {
+        alreadyTryDirs.push(dir);
       }
-      let canMove = this.#canMoveToDir(myTank, dir, bullets, tankWH, bulletWH);
-      if(canMove){
-        this.#move(dir);
-        moveDir = dir;
-        break;
+      moveDir = this.#tryMoveTank(myTank, dir, bullets, tankWH, bulletWH);
+      if(moveDir != undefined){
+        return moveDir;
       }
     }
     return moveDir;
   }
   //躲避坦克，优先中心区域
-  #avoidTank(myTank, centerDirs, escapeDirs, bullets, tankWH, bulletWH){
-
+  #avoidTank(myTank, moveDirs, bullets, tankWH, bulletWH, alreadyTryDirs){
     let moveDir = undefined;
-
-    let tmpCdir = $.extend(true, [], centerDirs);
-    let tmpEdir = $.extend(true, [], escapeDirs);
-
-    for(let dir of centerDirs){
-      if($.inArray(dir, escapeDirs) > -1){
-        this.#remove(dir, tmpEdir);
+    for(let dir of moveDirs){
+      if($.inArray(dir, alreadyTryDirs) >= 0){
+        continue;
       }else {
-        this.#remove(dir, tmpCdir);
+        alreadyTryDirs.push(dir);
+      }
+      moveDir = this.#tryMoveTank(myTank, dir, bullets, tankWH, bulletWH);
+      if(moveDir != undefined){
+        return moveDir;
       }
     }
-    let dirs = tmpCdir.concat(tmpEdir);
-    for(let dir of dirs){
-      let canMove = this.#canMoveToDir(myTank, dir, bullets, tankWH, bulletWH);
-      if(canMove){
-        this.#move(dir);
-        moveDir = dir;
-        break;
-      }
-    }
-    return moveDir;
+    return undefined;
   }
 
   //开火
@@ -720,9 +742,9 @@ window.playerB = new (class PlayerControl {
       }
     }
     if(fireDis > screenX*0.75){
-      mis = 1000;
-    }else if(fireDis > screenX*0.5){
       mis = 500;
+    }else if(fireDis > screenX*0.5){
+      mis = 400;
     }else if(fireDis > screenX*0.25){
       mis = 200;
     }
@@ -735,7 +757,7 @@ window.playerB = new (class PlayerControl {
   }
 
   //追击坦克
-  #attackTank(atkDis, myTank, latelyTank, tankWH, bulletWH, bullets, aiTankNum, centerDirs, enTank, enBullets, escapeDirs){
+  #attackTank(atkDis, myTank, latelyTank, tankWH, bulletWH, bullets, myAiTanks, enTank, enBullets, alreadyTryDirs){
 
     let moveDir = undefined;
     if(latelyTank == undefined){
@@ -744,7 +766,7 @@ window.playerB = new (class PlayerControl {
 
     let site_R = 1.8*tankWH;
     let site_L = 6.6*tankWH;
-    let site_S = 0.8*tankWH;
+    let site_S = 1*tankWH;
     if(latelyTank === enTank){
       let step = this.#enTankNoFire(enBullets, bulletWH);
       if(step > 10){
@@ -771,8 +793,20 @@ window.playerB = new (class PlayerControl {
     let atkDisY = Math.abs(myTank.Y - latelyTank.Y);//纵向差距
 
     let moveDirArry = [];
-    if(aiTankNum > 9 || atkDisX > atkDis*3){
-      if(atkDisX > 20){
+    if(myAiTanks.length > 5 || atkDisX > atkDis*2){
+      if(myAiTanks.length > 5){
+        if(myTank.X<screenX/2){
+          myAiTanks.sort(function (a, b) { return b.X - a.X;});
+        }else {
+          myAiTanks.sort(function (a, b) { return a.X - b.X;});
+        }
+        latelyTank = myAiTanks[1];
+      }else {
+        if(myTank.Y < 5*tankWH){
+          moveDirArry.push(this.#DIRECTION.DOWN);
+        }
+      }
+      if(atkDisX > 25){
         if(myTank.X > latelyTank.X){
           moveDirArry.push(this.#DIRECTION.LEFT);
         }else {
@@ -780,10 +814,10 @@ window.playerB = new (class PlayerControl {
         }
         if(myTank.Y > latelyTank.Y){
           moveDirArry.push(this.#DIRECTION.UP);
-        }else {
+        }else{
           moveDirArry.push(this.#DIRECTION.DOWN);
         }
-      }else if(atkDisY > 20){
+      }else if(atkDisY > 25){
         if(myTank.Y > latelyTank.Y){
           moveDirArry.push(this.#DIRECTION.UP);
         }else {
@@ -834,17 +868,11 @@ window.playerB = new (class PlayerControl {
         }
       }
     }
-    for(let dir of centerDirs){
-      if($.inArray(dir, moveDirArry) > -1){
-        moveDir = this.#tryMoveTank(myTank, dir, bullets, tankWH, bulletWH);
-      }
-      if(moveDir != undefined){
-        return moveDir;
-      }
-    }
     for(let dir of moveDirArry){
-      if($.inArray(dir, escapeDirs) >= 0){
+      if($.inArray(dir, alreadyTryDirs) >= 0){
         continue;
+      }else {
+        alreadyTryDirs.push(dir);
       }
       moveDir = this.#tryMoveTank(myTank, dir, bullets, tankWH, bulletWH);
       if(moveDir != undefined){
