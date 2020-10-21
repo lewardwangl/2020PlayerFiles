@@ -14,11 +14,11 @@ window.playerB = new (class PlayerControl {
     var enr = undefined
     aMyTankCount.forEach(element => {
       var c = element
-      if(c['id'] == 100)
+      if(c['id'] == 200)
       {
         cur = c
       }
-      if(c['id'] == 200)
+      if(c['id'] == 100)
       {
         enr = c
       }
