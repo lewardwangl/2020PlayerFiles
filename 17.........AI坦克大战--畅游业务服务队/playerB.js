@@ -154,7 +154,7 @@ window.playerB = new (class PlayerControl {
         }
     } 
     */
-    //console.log("LasttimeDefendAttackState ==========", this.LasttimeDefendAttackState) 
+    console.log("LasttimeDefendAttackState ==========", this.LasttimeDefendAttackState) 
     if(isattack){
         moveDirection = this.#attackWithBulletArray(enemyTanks, currentTankX, currentTankY, currentTankWH, BulletArray, moveDirection, CollideWallArray)//计算攻击方向
         this.LasttimeDefendAttackState = "attack"
@@ -182,7 +182,7 @@ window.playerB = new (class PlayerControl {
         }  
     }
     if(this.mustfire){
-        if (c - this.firetimestamp > 40) {//20毫秒=1个tick
+        if (c - this.firetimestamp > 40) {//20毫秒=1个tick，所以firetimestamp应该为20的整数倍
           console.log("fast fire5========",this.priority) 
           this.firetimestamp = c
           this.#fire();
@@ -399,14 +399,14 @@ window.playerB = new (class PlayerControl {
                 console.log("=============xxxx0")*/
                 
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
-                  currentTankX + 0,
+                  currentTankX-5 + 0,
                   currentTankY - thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  24, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  24+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx3")
+                    console.log("=============xxxx3")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustRIGHT
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 }
@@ -414,12 +414,12 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 25,
                   currentTankY - thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  25, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  25+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx4")
+                    console.log("=============xxxx4")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustLEFT
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 }                
@@ -444,14 +444,14 @@ window.playerB = new (class PlayerControl {
             if(bullet.direction == this.#DIRECTION.UP){
                 
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
-                  currentTankX + 0,
+                  currentTankX-5 + 0,
                   currentTankY + 50 + thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  24, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  24+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx5")
+                    console.log("=============xxxx5")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustRIGHT
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 }
@@ -459,12 +459,12 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 25,
                   currentTankY + 50 + thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  25, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  25+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx6")
+                    console.log("=============xxxx6")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustLEFT
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 }  
@@ -497,13 +497,13 @@ window.playerB = new (class PlayerControl {
                 
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 50 + thresholdvalue,
-                  currentTankY + 0,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 24, bulletWH * 1.2, bulletWH * 1.2
+                  currentTankY-5 + 0,
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 24+5, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx7")
+                    console.log("=============xxxx7")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustDOWN
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 }
@@ -511,12 +511,12 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 50 + thresholdvalue,
                   currentTankY + 25,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 25, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 25+5, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx8")
+                    console.log("=============xxxx8")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustUP
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 } 
@@ -540,13 +540,13 @@ window.playerB = new (class PlayerControl {
             if(bullet.direction == this.#DIRECTION.RIGHT){
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX - thresholdvalue,
-                  currentTankY + 0,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 24, bulletWH * 1.2, bulletWH * 1.2
+                  currentTankY-5 + 0,
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 24+5, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx7")
+                    console.log("=============xxxx7")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustDOWN
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 }
@@ -554,12 +554,12 @@ window.playerB = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX - thresholdvalue,
                   currentTankY + 25,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 25, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 25+5, 1, 1
                 );                
                 
                 if(dis2){
-                    //console.log("=============xxxx8")
+                    console.log("=============xxxx8")
                     Bullet[j+2][i+2] = this.MustDIRECTION.mustUP
                     break outer//既然有必须要躲的了，就不用再计算了                    
                 } 
@@ -951,12 +951,12 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if(this.LasttimeDefendAttackState == "attack" && this.priority == this.#DIRECTION.RIGHT){
                         this.isneedfire = true
-                        //console.log("太近了=============躲避", this.#DIRECTION.STOP)
+                        console.log("太近了=============躲避", this.#DIRECTION.STOP)
                         return this.#DIRECTION.STOP;                         
                     }
                     if(CollideWallArray[2][1] != this.MustDIRECTION.WallorMetal){//如果下移会撞墙，就不返回，继续执行下面的调整炮口或追击
                         this.LasttimeDefendAttackState == "attackwithdefend"
-                        //console.log("太近了=============躲避", this.#DIRECTION.LEFT)
+                        console.log("太近了=============躲避", this.#DIRECTION.LEFT)
                         return this.#DIRECTION.LEFT;  
                     }                       
                 }                      
@@ -966,12 +966,12 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if(this.LasttimeDefendAttackState == "attack" && this.priority == this.#DIRECTION.LEFT){
                         this.isneedfire = true
-                        //console.log("太近了=============躲避", this.#DIRECTION.STOP)
+                        console.log("太近了=============躲避", this.#DIRECTION.STOP)
                         return this.#DIRECTION.STOP;                         
                     }
                     if(CollideWallArray[2][3] != this.MustDIRECTION.WallorMetal){//如果下移会撞墙，就不返回，继续执行下面的调整炮口或追击
                         this.LasttimeDefendAttackState == "attackwithdefend"
-                        //console.log("太近了=============躲避", this.#DIRECTION.RIGHT)
+                        console.log("太近了=============躲避", this.#DIRECTION.RIGHT)
                         return this.#DIRECTION.RIGHT;
                     }                       
                 }                  
@@ -995,12 +995,12 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if(this.LasttimeDefendAttackState == "attack" && this.priority == this.#DIRECTION.UP){//防抖动
                         this.isneedfire = true
-                        //console.log("太近了=============躲避", this.#DIRECTION.STOP)//离敌方坦克很近了，停一步准备开火
+                        console.log("太近了=============躲避", this.#DIRECTION.STOP)//离敌方坦克很近了，停一步准备开火
                         return this.#DIRECTION.STOP;                         
                     }
                     if(CollideWallArray[3][2] != this.MustDIRECTION.WallorMetal){//如果下移会撞墙，就不返回，继续执行下面的调整炮口或追击
                         this.LasttimeDefendAttackState == "attackwithdefend"
-                        //console.log("太近了=============躲避", this.#DIRECTION.DOWN)
+                        console.log("太近了=============躲避", this.#DIRECTION.DOWN)
                         return this.#DIRECTION.DOWN;  
                     }
                 }
@@ -1010,12 +1010,12 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if(this.LasttimeDefendAttackState == "attack" && this.priority == this.#DIRECTION.DOWN){
                         this.isneedfire = true
-                        //console.log("太近了=============躲避", this.#DIRECTION.STOP)
+                        console.log("太近了=============躲避", this.#DIRECTION.STOP)
                         return this.#DIRECTION.STOP;                         
                     }
                     if(CollideWallArray[1][2] != this.MustDIRECTION.WallorMetal){//如果下移会撞墙，就不返回，继续执行下面的调整炮口或追击
                         this.LasttimeDefendAttackState == "attackwithdefend"
-                        //console.log("太近了=============躲避", this.#DIRECTION.UP)
+                        console.log("太近了=============躲避", this.#DIRECTION.UP)
                         return this.#DIRECTION.UP; 
                     }                                                   
                 }                
@@ -1025,12 +1025,12 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if(this.LasttimeDefendAttackState == "attack" && this.priority == this.#DIRECTION.RIGHT){
                         this.isneedfire = true
-                        //console.log("太近了=============躲避", this.#DIRECTION.STOP)
+                        console.log("太近了=============躲避", this.#DIRECTION.STOP)
                         return this.#DIRECTION.STOP;                         
                     }
                     if(CollideWallArray[2][1] != this.MustDIRECTION.WallorMetal){//如果下移会撞墙，就不返回，继续执行下面的调整炮口或追击
                         this.LasttimeDefendAttackState == "attackwithdefend"
-                        //console.log("太近了=============躲避", this.#DIRECTION.LEFT)
+                        console.log("太近了=============躲避", this.#DIRECTION.LEFT)
                         return this.#DIRECTION.LEFT;  
                     }                       
                 }                      
@@ -1050,7 +1050,7 @@ window.playerB = new (class PlayerControl {
                     }                       
                 }                  
               }
-              //console.log("躲避============= null")
+              console.log("躲避============= null")
               return "noattack"
             }   
             
@@ -1064,7 +1064,7 @@ window.playerB = new (class PlayerControl {
             }else{
                 if (moveDirection != this.#DIRECTION.UP) {
                   moveDirection = this.#DIRECTION.UP  
-                  //console.log("炮口调整", moveDirection)
+                  console.log("炮口调整", moveDirection)
                   return this.#DIRECTION.UP;
                 }else{
                   this.isneedfire = true
@@ -1078,7 +1078,7 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if (moveDirection != this.#DIRECTION.DOWN) {
                       moveDirection = this.#DIRECTION.DOWN  
-                      //console.log("炮口调整", moveDirection)
+                      console.log("炮口调整", moveDirection)
                       return this.#DIRECTION.DOWN;
                     }else{
                         this.isneedfire = true
@@ -1093,7 +1093,7 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if (moveDirection != this.#DIRECTION.LEFT) {
                       moveDirection = this.#DIRECTION.LEFT  
-                      //console.log("炮口调整", moveDirection)
+                      console.log("炮口调整", moveDirection)
                       return this.#DIRECTION.LEFT;
                     }else{
                         this.isneedfire = true
@@ -1108,7 +1108,7 @@ window.playerB = new (class PlayerControl {
                 }else{
                     if (moveDirection != this.#DIRECTION.RIGHT) {
                       moveDirection = this.#DIRECTION.RIGHT  
-                      //console.log("炮口调整", moveDirection)
+                      console.log("炮口调整", moveDirection)
                       return this.#DIRECTION.RIGHT;
                     }else{
                         this.isneedfire = true
@@ -1125,7 +1125,7 @@ window.playerB = new (class PlayerControl {
         var chaseLEFT = false
         var chaseRIGHT = false
         if(this.firstBullet){
-            //开局时优先在x方向上移动
+            //开局时优先在x方向上移动，因为Y上面水平子弹太密集
             if(currentTankX < canvas.width/2){
                 return this.#DIRECTION.LEFT;        
             }else{
@@ -1377,11 +1377,11 @@ window.playerB = new (class PlayerControl {
         
       console.log("this.priority--"+this.priority)
       if (this.#DIRECTION.DOWN == Bullet[1][2] || this.#DIRECTION.UP == Bullet[3][2] || this.#DIRECTION.UP == Bullet[2][2] || this.#DIRECTION.DOWN == Bullet[2][2]) { //必须左右移动
-        //console.log("准备左移或者右移--")
+        console.log("准备左移或者右移--")
         if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH
           ) && this.#DIRECTION.DOWN != Bullet[1][1] && this.#DIRECTION.UP != Bullet[3][1] && this.#DIRECTION.RIGHT != Bullet[2][0] && this.#DIRECTION.STOP == Bullet[2][1]) {
             moveDirectionleft = this.#DIRECTION.LEFT;
-            //console.log("准备左移--")
+            console.log("准备左移--")
             if(this.priority == this.#DIRECTION.LEFT){//防止来回抖动
                 console.log("安全躲避移动左1--")
                 return moveDirectionleft 
@@ -1401,7 +1401,7 @@ window.playerB = new (class PlayerControl {
         if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH
         ) && this.#DIRECTION.DOWN != Bullet[1][3] && this.#DIRECTION.UP != Bullet[3][3] && this.#DIRECTION.LEFT != Bullet[2][4] && this.#DIRECTION.STOP == Bullet[2][3]) {       
             moveDirectionright = this.#DIRECTION.RIGHT;
-            //console.log("准备右移--")
+            console.log("准备右移--")
             if(this.priority == this.#DIRECTION.RIGHT){//防止来回抖动
                 console.log("安全躲避移动右1--")
                 return moveDirectionright 
@@ -1456,13 +1456,13 @@ window.playerB = new (class PlayerControl {
       }
       
       if (this.#DIRECTION.RIGHT == Bullet[2][1] || this.#DIRECTION.LEFT == Bullet[2][3] || this.#DIRECTION.RIGHT == Bullet[2][2] || this.#DIRECTION.LEFT == Bullet[2][2]) { //必须上下移动
-        //console.log("准备上移或者下移--")
+        console.log("准备上移或者下移--")
         if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.UP, currentTankWH
           ) && this.#DIRECTION.RIGHT != Bullet[1][1] && this.#DIRECTION.LEFT != Bullet[1][3] && this.#DIRECTION.DOWN != Bullet[0][2] && this.#DIRECTION.STOP == Bullet[1][2]) {
             moveDirectionup = this.#DIRECTION.UP;
-            //console.log("准备上移--")
+            console.log("准备上移--")
             if(this.priority == this.#DIRECTION.UP){//防止来回抖动
-                //console.log("安全躲避移动上1--")
+                console.log("安全躲避移动上1--")
                 return moveDirectionup 
             }
             
@@ -1482,7 +1482,7 @@ window.playerB = new (class PlayerControl {
             console.log("准备下移--")
             moveDirectiondown = this.#DIRECTION.DOWN;
             if(this.priority == this.#DIRECTION.DOWN){//防止来回抖动
-                //console.log("安全躲避移动下1--")
+                console.log("安全躲避移动下1--")
                 return moveDirectiondown 
             }
             

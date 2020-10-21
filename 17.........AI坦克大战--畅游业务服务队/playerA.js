@@ -399,10 +399,10 @@ window.playerA = new (class PlayerControl {
                 console.log("=============xxxx0")*/
                 
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
-                  currentTankX + 0,
+                  currentTankX-5 + 0,
                   currentTankY - thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  24, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  24+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
@@ -414,8 +414,8 @@ window.playerA = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 25,
                   currentTankY - thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  25, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  25+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
@@ -444,10 +444,10 @@ window.playerA = new (class PlayerControl {
             if(bullet.direction == this.#DIRECTION.UP){
                 
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
-                  currentTankX + 0,
+                  currentTankX-5 + 0,
                   currentTankY + 50 + thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  24, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  24+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
@@ -459,8 +459,8 @@ window.playerA = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 25,
                   currentTankY + 50 + thresholdvalue,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  25, thresholdvalue, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  25+5, thresholdvalue, 1, 1
                 );                
                 
                 if(dis2){
@@ -497,9 +497,9 @@ window.playerA = new (class PlayerControl {
                 
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 50 + thresholdvalue,
-                  currentTankY + 0,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 24, bulletWH * 1.2, bulletWH * 1.2
+                  currentTankY-5 + 0,
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 24+5, 1, 1
                 );                
                 
                 if(dis2){
@@ -511,8 +511,8 @@ window.playerA = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX + 50 + thresholdvalue,
                   currentTankY + 25,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 25, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 25+5, 1, 1
                 );                
                 
                 if(dis2){
@@ -540,9 +540,9 @@ window.playerA = new (class PlayerControl {
             if(bullet.direction == this.#DIRECTION.RIGHT){
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX - thresholdvalue,
-                  currentTankY + 0,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 24, bulletWH * 1.2, bulletWH * 1.2
+                  currentTankY-5 + 0,
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 24+5, 1, 1
                 );                
                 
                 if(dis2){
@@ -554,8 +554,8 @@ window.playerA = new (class PlayerControl {
                 dis2 = this.#collision(//这颗子弹和这个宫格发生了碰撞
                   currentTankX - thresholdvalue,
                   currentTankY + 25,
-                  bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-                  thresholdvalue, 25, bulletWH * 1.2, bulletWH * 1.2
+                  bullet.X - 1 , bullet.Y - 1 ,
+                  thresholdvalue, 25+5, 1, 1
                 );                
                 
                 if(dis2){
@@ -1125,7 +1125,7 @@ window.playerA = new (class PlayerControl {
         var chaseLEFT = false
         var chaseRIGHT = false
         if(this.firstBullet){
-            //开局时优先在x方向上移动
+            //开局时优先在x方向上移动，因为Y上面水平子弹太密集
             if(currentTankX < canvas.width/2){
                 return this.#DIRECTION.LEFT;        
             }else{
