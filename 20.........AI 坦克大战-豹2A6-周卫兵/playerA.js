@@ -7,7 +7,7 @@ window.playerA = new (class PlayerControl {
     this.firetimestamp = (new Date()).valueOf()
     this.priority = this.#DIRECTION.STOP;
     this.flag=10;
-  }1
+  }
   land() {
     // 当前的坦克实例
     var cur = undefined
@@ -64,10 +64,10 @@ window.playerA = new (class PlayerControl {
     var lateEnemy = undefined
 
     var misDistanceOfEnemy = currentTankWH * 100  //初始化离他最近的坦克
-    var secruitydistance = currentTankWH * 4     //安全距离
+    var secruitydistance = currentTankWH * 4   //安全距离
     var secruitylevel = enemyTanks.length       //坦克的数量
     var firedirectdis = 4                     // 根据最近坦克的距离大于firedirectdis*currentTankWH调整炮口
-    var escapedir = 1.1                       // 距离小于多少时逃跑
+    var escapedir = 1.2                      // 距离小于多少时逃跑
     var fight = 3                           // 大于多少个安全距离时追击
     var escapenum = 0                      // 逃跑系数
 
@@ -91,12 +91,12 @@ window.playerA = new (class PlayerControl {
     if(secruitylevel<=4)  //是否可以加速打电脑
     {
        firedirectdis = 3
-       escapedir = 1.1
+       escapedir = 1.2
        fight = 2
     }
     if(!enemyTank){
-       escapedir = 2
-       fight = 3
+       escapedir = 3
+       fight = 5
     }
 
     if (moveDirection == undefined && escapenum < 6) {
@@ -140,16 +140,16 @@ window.playerA = new (class PlayerControl {
         }
         else if (dis < escapedir * currentTankWH) {  //逃跑 判断条件放宽 STOP 改成RIGHT
           if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.DOWN, currentTankWH
-          )/*(disX < disY) && (lateEnemy.Y < currentTankY) &&*/ &&  this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20] && this.#DIRECTION.UP!=Bullet[22] && this.#DIRECTION.UP!=Bullet[24] &&  this.#DIRECTION.DOWN!=Bullet[6]){
+          )/*(disX < disY) && (lateEnemy.Y < currentTankY) &&*/ &&  this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20] && this.#DIRECTION.UP!=Bullet[22] && this.#DIRECTION.UP!=Bullet[24]  && this.#DIRECTION.DOWN != Bullet[2] && this.#DIRECTION.DOWN!=Bullet[6]){
             moveDirection = this.#DIRECTION.DOWN;
           }else if ( !this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.UP, currentTankWH
-          )/*(disX < disY) && (lateEnemy.Y >= currentTankY) &&*/  && this.#DIRECTION.RIGHT != Bullet[4] && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.LEFT != Bullet[8] && this.#DIRECTION.DOWN!=Bullet[2] && this.#DIRECTION.DOWN!=Bullet[0] && this.#DIRECTION.UP!=Bullet[18]) {
+          )/*(disX < disY) && (lateEnemy.Y >= currentTankY) &&*/  && this.#DIRECTION.RIGHT != Bullet[4] && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.LEFT != Bullet[8] && this.#DIRECTION.DOWN!=Bullet[2] && this.#DIRECTION.DOWN!=Bullet[0] && this.#DIRECTION.UP!=Bullet[18] &&  this.#DIRECTION.UP!=Bullet[22] ) {
             moveDirection = this.#DIRECTION.UP;
           } else if ( !this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH
-          ) &&  this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23] && this.#DIRECTION.LEFT!=Bullet[14] && this.#DIRECTION.LEFT!=Bullet[14]) {
-            moveDirection = this.#DIRECTION.RIGHT
+          ) &&  this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23] && this.#DIRECTION.LEFT!=Bullet[14] && this.#DIRECTION.LEFT!=Bullet[14] && this.#DIRECTION.RIGHT !=Bullet[11]) {
+            moveDirection = this.#DIRECTION.RIGHT;
           } else if ( !this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH
-          ) && this.#DIRECTION.DOWN != Bullet[1] && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17] && this.#DIRECTION.UP != Bullet[21] && this.#DIRECTION.RIGHT!=Bullet[10] && this.#DIRECTION.RIGHT!=Bullet[9]) {
+          ) && this.#DIRECTION.DOWN != Bullet[1] && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17] && this.#DIRECTION.UP != Bullet[21] && this.#DIRECTION.RIGHT!=Bullet[10] && this.#DIRECTION.RIGHT!=Bullet[9] && this.#DIRECTION.LEFT!=Bullet[13]) {
             moveDirection = this.#DIRECTION.LEFT;
           }
           else if ((currentTankX + currentTankWH) > screenX ) { moveDirection = this.#DIRECTION.LEFT}
@@ -158,7 +158,7 @@ window.playerA = new (class PlayerControl {
           }
         this.priority = moveDirection
         if (moveDirection == undefined ){
-           moveDirection= this.#DIRECTION.RIGHT;
+           moveDirection= this.#DIRECTION.UP;
         }
         var c = (new Date()).valueOf()
         if (c - this.firetimestamp > 100) {
@@ -295,7 +295,7 @@ window.playerA = new (class PlayerControl {
      }
      if (this.#DIRECTION.RIGHT == Bullet[11] || this.#DIRECTION.LEFT == Bullet[13]) { //必须垂直移动
        if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.DOWN, currentTankWH
-       ) && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20]  && this.#DIRECTION.UP != Bullet[22] && this.#DIRECTION.UP != Bullet[24] ) {
+       ) && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20]  && this.#DIRECTION.UP != Bullet[22] && this.#DIRECTION.UP != Bullet[24] && this.#DIRECTION.DOWN != Bullet[2] && this.#DIRECTION.DOWN != Bullet[6]  ) {
            console.log("安全躲避移动下")
            moveDirection = this.#DIRECTION.DOWN;
        }
@@ -319,7 +319,7 @@ window.playerA = new (class PlayerControl {
      }
      else if (this.#DIRECTION.RIGHT == Bullet[10] || this.#DIRECTION.LEFT == Bullet[14] || this.#DIRECTION.RIGHT == Bullet[11] || this.#DIRECTION.LEFT == Bullet[13]) { //考虑垂直移动
        if(!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.DOWN, currentTankWH
-       ) && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19]  && this.#DIRECTION.LEFT != Bullet[20]  && this.#DIRECTION.UP != Bullet[22] &&  this.#DIRECTION.UP != Bullet[24]) {
+       ) && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19]  && this.#DIRECTION.LEFT != Bullet[20]  && this.#DIRECTION.UP != Bullet[22] &&  this.#DIRECTION.UP != Bullet[24] && this.#DIRECTION.DOWN != Bullet[6] && this.#DIRECTION.DOWN != Bullet[2] ) {
          console.log("预防安全躲避移动下")
          moveDirection = this.#DIRECTION.DOWN;
        }
@@ -341,10 +341,6 @@ window.playerA = new (class PlayerControl {
        else if ( (currentTankY + currentTankWH) > screenY) { moveDirection = this.#DIRECTION.UP}
        else { console.log("无法躲避")}
      }
-    if( moveDirection == undefined  && (currentTankY + currentTankWH) >= screenY )
-    {
-       moveDirection = this.#DIRECTION.UP
-    }
     return moveDirection
   }
 
@@ -355,7 +351,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + currentTankWH,
         currentTankY,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis ) {
         Bullet[13] = bullet.direction
@@ -367,7 +363,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + 2 * currentTankWH,
         currentTankY,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[14] = bullet.direction
@@ -376,7 +372,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + 3 * currentTankWH,
         currentTankY,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       )
       if (true == dis) {
         Bullet[15] = bullet.direction
@@ -385,7 +381,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - 3 * currentTankWH,
         currentTankY,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[9] = bullet.direction
@@ -394,7 +390,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - 2 * currentTankWH,
         currentTankY,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[10] = bullet.direction
@@ -403,7 +399,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - currentTankWH,
         currentTankY,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[11] = bullet.direction
@@ -415,7 +411,7 @@ window.playerA = new (class PlayerControl {
         currentTankX,
         currentTankY + currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[18] = bullet.direction
@@ -427,7 +423,7 @@ window.playerA = new (class PlayerControl {
         currentTankX,
         currentTankY + 2 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[22] = bullet.direction
@@ -436,7 +432,7 @@ window.playerA = new (class PlayerControl {
         currentTankX,
         currentTankY + 3 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[24] = bullet.direction
@@ -445,7 +441,7 @@ window.playerA = new (class PlayerControl {
         currentTankX,
         currentTankY - 3 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[0] = bullet.direction
@@ -454,7 +450,7 @@ window.playerA = new (class PlayerControl {
         currentTankX,
         currentTankY - 2 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[2] = bullet.direction
@@ -463,7 +459,7 @@ window.playerA = new (class PlayerControl {
         currentTankX,
         currentTankY - currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[6] = bullet.direction
@@ -475,7 +471,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - currentTankWH,
         currentTankY - currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[5] = bullet.direction
@@ -484,7 +480,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - currentTankWH,
         currentTankY - 2 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[1] = bullet.direction
@@ -493,7 +489,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - 2 * currentTankWH,
         currentTankY - currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[4] = bullet.direction
@@ -502,7 +498,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + 2 * currentTankWH,
         currentTankY - currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[8] = bullet.direction
@@ -511,7 +507,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + currentTankWH,
         currentTankY - currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[7] = bullet.direction
@@ -520,7 +516,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + currentTankWH,
         currentTankY - 2 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[3] = bullet.direction
@@ -529,7 +525,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - 2 * currentTankWH,
         currentTankY + currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[16] = bullet.direction
@@ -538,7 +534,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - currentTankWH,
         currentTankY + currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[17] = bullet.direction
@@ -547,7 +543,7 @@ window.playerA = new (class PlayerControl {
         currentTankX - currentTankWH,
         currentTankY + 2 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[21] = bullet.direction
@@ -556,7 +552,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + currentTankWH,
         currentTankY + currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[19] = bullet.direction
@@ -565,7 +561,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + 2 * currentTankWH,
         currentTankY + currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[20] = bullet.direction
@@ -574,7 +570,7 @@ window.playerA = new (class PlayerControl {
         currentTankX + currentTankWH,
         currentTankY + 2 * currentTankWH,
         bullet.X - bulletWH/2 - 1 , bullet.Y- bulletWH/2 - 1 ,
-        currentTankWH, currentTankWH, bulletWH * 1.2, bulletWH * 1.2
+        currentTankWH, currentTankWH, bulletWH * 1.5, bulletWH * 1.5
       );
       if (true == dis) {
         Bullet[23] = bullet.direction
