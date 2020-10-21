@@ -130,7 +130,7 @@ window.playerB = new (class PlayerControl {
       escapedir = 4
       fight = 4
     }
-    if (moveDirection == undefined && escapenum < 3) {
+    if (moveDirection == undefined && escapenum < 5) {
       //不移动可以考虑炮击
       if (undefined != lateEnemy) {
         var disX = Math.abs(lateEnemy.X - currentTankX)
@@ -183,7 +183,7 @@ window.playerB = new (class PlayerControl {
         }
       }
     }
-    else if (escapenum >= 3) {
+    else if (escapenum >= 4) {
       if (cy > currentTankY && this.#DIRECTION.STOP == Bullet[9] && this.#DIRECTION.STOP == Bullet[10] && this.#DIRECTION.STOP == Bullet[11] &&  this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.STOP == Bullet[15]) {
         moveDirection = this.#DIRECTION.DOWN;
       } else if (cy > currentTankY && this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[2] && this.#DIRECTION.STOP == Bullet[3] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.STOP == Bullet[16]) {
@@ -687,23 +687,24 @@ window.playerB = new (class PlayerControl {
             moveDirection = this.#DIRECTION.UP;
           }
           else{
-            if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRightPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
-              // if(this.priority == this.#DIRECTION.RIGHT && moveDirection == this.#DIRECTION.LEFT)
-              // {        
-              moveDirection = this.#DIRECTION.RIGHT;
-              // }
-            }
-            else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH) && this.#isMoveLeftPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
+            if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH) && this.#isMoveLeftPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
               moveDirection = this.#DIRECTION.LEFT;
-            }else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRight(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
+            }else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRightPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
               // if(this.priority == this.#DIRECTION.RIGHT && moveDirection == this.#DIRECTION.LEFT)
               // {        
               moveDirection = this.#DIRECTION.RIGHT;
               // }
-            }
+            } 
             else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH) && this.#isMoveLeft(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
               moveDirection = this.#DIRECTION.LEFT;
             }
+            else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRight(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
+              // if(this.priority == this.#DIRECTION.RIGHT && moveDirection == this.#DIRECTION.LEFT)
+              // {        
+              moveDirection = this.#DIRECTION.RIGHT;
+              // }
+            }
+            
             if(closeETanks.length>0){
               moveDirection = this.#mustAvoidETank(moveDirection,closeETanks);
             }
@@ -724,15 +725,11 @@ window.playerB = new (class PlayerControl {
             moveDirection = this.#DIRECTION.UP;
           }
           else{
-            if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRightPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
-              // if(this.priority == this.#DIRECTION.RIGHT && moveDirection == this.#DIRECTION.LEFT)
-              // {        
-              moveDirection = this.#DIRECTION.RIGHT;
-              // }
-            }
-            else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH) && this.#isMoveLeftPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
+            
+            if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH) && this.#isMoveLeftPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
               moveDirection = this.#DIRECTION.LEFT;
-            }else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRight(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
+            }
+            else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRightPrevent(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
               // if(this.priority == this.#DIRECTION.RIGHT && moveDirection == this.#DIRECTION.LEFT)
               // {        
               moveDirection = this.#DIRECTION.RIGHT;
@@ -740,6 +737,12 @@ window.playerB = new (class PlayerControl {
             }
             else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH) && this.#isMoveLeft(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
               moveDirection = this.#DIRECTION.LEFT;
+            }
+            else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH) && this.#isMoveRight(currentTankX, currentTankY, currentTankWH, Bullet, moveDirection, closeETanks)) {
+              // if(this.priority == this.#DIRECTION.RIGHT && moveDirection == this.#DIRECTION.LEFT)
+              // {        
+              moveDirection = this.#DIRECTION.RIGHT;
+              // }
             }
             if(closeETanks.length>0){
               moveDirection = this.#mustAvoidETank(moveDirection,closeETanks);

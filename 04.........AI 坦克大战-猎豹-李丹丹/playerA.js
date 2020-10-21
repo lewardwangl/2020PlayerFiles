@@ -134,7 +134,7 @@ window.playerA = new (class PlayerControl {
       escapedir = 4
       fight = 4
     }
-    if (moveDirection == undefined && escapenum < 3) {
+    if (moveDirection == undefined && escapenum < 5) {
       //不移动可以考虑炮击
       if (undefined != lateEnemy) {
         var disX = Math.abs(lateEnemy.X - currentTankX)
@@ -199,7 +199,7 @@ window.playerA = new (class PlayerControl {
         }
       }
     }
-    else if (escapenum >= 3) {
+    else if (escapenum >= 4) {
       if (cy > currentTankY && this.#DIRECTION.STOP == Bullet[9] && this.#DIRECTION.STOP == Bullet[10] && this.#DIRECTION.STOP == Bullet[11] &&  this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.STOP == Bullet[15]) {
         moveDirection = this.#DIRECTION.DOWN;
       } else if (cy > currentTankY && this.#DIRECTION.STOP == Bullet[1] && this.#DIRECTION.STOP == Bullet[2] && this.#DIRECTION.STOP == Bullet[3] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.STOP == Bullet[16]) {
