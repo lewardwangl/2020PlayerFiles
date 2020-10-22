@@ -1,183 +1,3 @@
-function Behaviac (object, context) {
-  this.object = object;
-  this.context = context;
-
-  this.confirm_array = function (obj) {
-    if (obj) {
-      return obj;
-    } else {
-      return [];
-    }
-  }
-
-  //bt:行为树描述
-  this.run = function (bt) {
-    var first_children = bt.children[0];
-    //console.log("first::", first_children.type)
-    this[first_children.type](first_children);
-  };
-
-  //Composite Node组
-
-  //实现子节点或关系，按定义顺序遍历子节点，直到有一个子节点返回true时停止，并返回true。如果子节点全部返回false，则返回false。
-  this.Selector = function (node) {
-    var return_value = false;
-    let childArray = this.confirm_array(node.children);
-    for (var child in childArray) {
-      var childValue = node.children[child];
-      //console.log("Selecter  type:", childValue.type, childValue.func);
-      //调用子节点
-      if (this[childValue.type](childValue) == true) {
-        //console.log("Selecter  type: true:", childValue.type, childValue.func);
-        return_value = true;
-        break;
-      } else {
-        //console.log("Selecter  type: false:", childValue.type, childValue.func);
-      }
-    }
-    return return_value;
-  }
-
-  //类似Selector，不同之处在于，按照随机顺序遍历子节点。
-  this.RandomSelector = function (node) {
-    var return_value = false;
-    let childArray = this.confirm_array(node.children);
-    let recycle = [];
-    while (childArray.length != recycle.length) {
-      let value = Math.floor(Math.random() * childArray.length);
-      if (recycle.indexOf(value) == -1) {
-        recycle.push(value);
-        var childValue = node.children[value];
-        //console.log("RandomSelector  type:", childValue.type, childValue.func);
-        //调用子节点
-        if (this[childValue.type](childValue) == true) {
-          //console.log("RandomSelector  type: true:", childValue.type, childValue.func);
-          return_value = true;
-          break;
-        } else {
-          //console.log("RandomSelector  type: false:", childValue.type, childValue.func);
-        }
-      }
-    }
-    return return_value;
-  }
-
-  //实现子节点与关系，按定义顺序遍历子节点，直到有一个节点返回false时停止，并返回false。如果子节点全部返回true，则返回true。
-  this.Sequence = function (node) {
-    var return_value = true;
-    let childArray = this.confirm_array(node.children);
-    for (var child in childArray) {
-      var childValue = childArray[child];
-      //console.log("Sequence type:", childValue.type, childValue.func);
-      //调用子节点
-      if (this[childValue.type](childValue) == false) {
-        //console.log("Sequence type: false:", childValue.type, childValue.func);
-        return_value = false;
-        break;
-      } else {
-        //console.log("Sequence type: true:", childValue.type, childValue.func);
-      }
-    }
-    return return_value;
-  }
-
-  this.RandomSequence = function (node) {
-    var return_value = true;
-    let childArray = this.confirm_array(node.children);
-    let recycle = [];
-    while (childArray.length != recycle.length) {
-      let value = Math.floor(Math.random() * childArray.length);
-      if (recycle.indexOf(value) == -1) {
-        recycle.push(value);
-        var childValue = node.children[value];
-        //console.log("RandomSequence  type:", childValue.type, childValue.func);
-        //调用子节点
-        if (this[childValue.type](childValue) == false) {
-          //console.log("RandomSequence type: false:", childValue.type, childValue.func);
-          return_value = false;
-          break;
-        } else {
-          //console.log("RandomSequence type: true:", childValue.type, childValue.func);
-        }
-      }
-    }
-    return return_value;
-  }
-
-  //Behaviour Node组
-
-  //执行其中定义的行为，并返回true。
-  this.Action = function (node) {
-    var ret = this.object[node.func](this.context);
-    if (typeof (ret) == "undefined") {
-      return true;
-    }
-    return ret;
-  }
-
-  //返回条件判断。
-  this.Condition = function (node) {
-    if (this.object[node.func](this.context)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  //Condition Node组
-
-  //如果Filter为真，则执行子节点，并返回true；否则，不执行子节点，返回false。
-  this.Filter = function (node) {
-    //console.log("Filter:", node.func);
-    if (this.object[node.func](this.context)) {
-      var first_children = node.children[0];
-      return this[first_children.type](first_children);//执行指定【类型】函数
-    } else {
-      return false;
-    }
-  }
-
-  //Decorator Nodes组
-
-  //将子节点的返回结果取反
-  this.Inverter = function (node) {
-    var first_children = node.children[0];
-    if (this[first_children.type](first_children) == true) {
-      //console.log("Inverter type: true[->false] ", first_children.type, first_children.func);
-      return false;
-    } else {
-      //console.log("Inverter type: false[->true] ", first_children.type, first_children.func);
-      return true;
-    }
-  }
-
-  //忽视子节点的返回，强制返回true
-  this.Succeeder = function (node) {
-    var first_children = node.children[0];
-    //console.log("Succeeder type:", first_children.type, first_children.func);
-    this[first_children.type](first_children);
-    return true;
-  }
-
-  //执行子节点知道返回失败为止
-  this.RepeatUntilFail = function (node) {
-    var first_children = node.children[0];
-    while (true) {
-      //console.log("RepeatUntilFail type:", first_children.type, first_children.func);
-      if (this[first_children.type](first_children) == false) {
-        break;
-      }
-    }
-    return false;
-  }
-}
-
-if (typeof (enableAstar) == 'undefined') {
-  !function (e, t) { "object" == typeof exports && "undefined" != typeof module ? module.exports = t() : "function" == typeof define && define.amd ? define(t) : "function" == typeof define && (define.cmd || define.hjs) ? define(function (require, exports, e) { e.exports = t() }) : e.Astar = t() }(this, function () { "use strict"; var e = function (e) { return e.split(",").map(Number) }; return function () { function t (e) { var t = this; t.grid = e, t.openList = {}, t.closeList = {}, t.current } return t.prototype.search = function (e, t, r) { var n = this, i = { rightAngle: !1, optimalResult: !0 }; r = n.searchOption = r || {}; for (var o in i) r[o] === undefined && (r[o] = i[o]); n.start = e, n.end = t, n.grid.get(e).value = 0, n.grid.set(e, "type", "start"), n.grid.get(t).value = 0, n.grid.set(t, "type", "end"); var d, u; return n.openList[e] = null, n.grid.set(e, "type", "open"), (u = function (e) { if (n.grid.set(e, "type", "highlight"), n.grid.get(e) === n.grid.get(n.end)) d = n.getBackPath(e); else { for (var t = n.getAround(e), r = 0, i = t.length; r < i; r++) { var o = t[r], l = n.grid.get(o); if (null !== n.openList[o]) n.openList[o] = null, l.parent = e, l.g = n.g(o, e), l.h = n.h(o, n.end), l.f = n.f(o), n.grid.set(o, "type", "open"); else { var s = l.g, g = n.g(o, e); g < s && (l.parent = e, l.g = g, l.f = n.f(o), n.grid.set(o, "type", "update")) } } delete n.openList[e], n.closeList[e] = null, n.grid.set(e, "type", "close"); var f = n.getOpenListMin(); f && u(f.key) } })(e), d }, t.prototype.getBackPath = function (e) { var t, r = this, n = [e]; return (t = function (e) { var i = r.grid.get(e).parent; i && (n.unshift(i), t(i)) })(e), n }, t.prototype.getOpenListMin = function () { var t, r = this; for (var n in r.openList) { var i = e(n), o = r.grid.get(i); (t === undefined || o.f < t.f) && (t = r.grid.get(i)) } return t }, t.prototype.getOffsetGrid = function (e, t) { return [e[0] + t[0], e[1] + t[1]] }, t.prototype.getAround = function (e) { var t = this, r = t.searchOption, n = [], i = t.grid, o = { lt: [-1, -1], t: [0, -1], rt: [1, -1], r: [1, 0], rb: [1, 1], b: [0, 1], lb: [-1, 1], l: [-1, 0] }, d = function (e, r) { var n = i.get(t.getOffsetGrid(e, r)); return n !== undefined && n.value > 0 }; r.rightAngle ? (delete o.lt, delete o.rt, delete o.rb, delete o.lb) : (d(e, o.l) && (delete o.lt, delete o.lb), d(e, o.r) && (delete o.rt, delete o.rb), d(e, o.t) && (delete o.lt, delete o.rt), d(e, o.b) && (delete o.lb, delete o.rb)); for (var u in o) { var l = o[u], s = [e[0] + l[0], e[1] + l[1]], g = null === t.closeList[s]; s[0] > -1 && s[0] < i.col && s[1] > -1 && s[1] < i.row && !g && i.get(s).value < 1 && n.push(s) } return n }, t.prototype.f = function (e) { var t = this, r = t.grid.get(e); return r.g + r.h }, t.prototype.g = function (e, t) { return this.searchOption.optimalResult ? (t[0] === e[0] || t[1] === e[1] ? 10 : 14) + this.grid.get(t).g : 0 }, t.prototype.h = function (e, t) { return 10 * (Math.abs(e[0] - t[0]) + Math.abs(e[1] - t[1])) }, t }() });
-  !function (e, n) { "object" == typeof exports && "undefined" != typeof module ? module.exports = n() : "function" == typeof define && define.amd ? define(n) : "function" == typeof define && (define.cmd || define.hjs) ? define(function (require, exports, e) { e.exports = n() }) : e.Grid = n() }(this, function () { "use strict"; var e = function (e, n) { return ~~(Math.random() * (n - e + 1)) + e }, n = function (e, n) { var t = this; t.x = e, t.y = n, t.g = 0, t.h = 0, t.f = 0, t.value = 0, t.key = [e, n] }; return function () { function t (e) { var n = this; n.col = e.col, n.row = e.row, n.grid = n.createGrid(e.col, e.row, e.render) } return t.prototype.obstacle = function (n, t) { for (var r, o = this, i = ~~(o.col * o.row * n / 100), u = [], f = {}, c = 0; c < i; c++)(r = function () { u[0] = e(0, o.col - 1), u[1] = e(0, o.row - 1); var n = o.get(u); 0 === n.value ? (n.value = t, f[[u[0], u[1]]] = null) : r() })(); return f }, t.prototype.get = function (e) { var n = this.grid[e[1]]; return n ? n[e[0]] : undefined }, t.prototype.set = function (e, n, t) { var r = this.get(e); r[n] = t, "function" == typeof r.render && r.render({ key: n, val: t }) }, t.prototype.createGrid = function (e, t, r) { for (var o = [], i = 0; i < t; i++)!function (t) { var i = function () { for (var o = [], i = 0; i < e; i++) { var u = new n(i, t); "function" == typeof r && (u.render = r), o[i] = u } return o }(); o.push(i) }(i); return o }, t.prototype.getData = function () { for (var e = this, n = e.grid, t = [], r = 0, o = n.length; r < o; r++)!function (e, r) { var o = n[e]; t.push(function () { for (var e = [], n = 0, t = o.length; n < t; n++)e.push(o[n].value); return e }()) }(r); return t }, t }() });
-  var enableAstar = true;
-}
-
 window.playerB = new (class PlayerControl {
   // A 选手   B 选手
   constructor(type) {
@@ -186,16 +6,13 @@ window.playerB = new (class PlayerControl {
     this.#fireEv = new CustomEvent('keydown')
     this.firetimestamp = new Date().valueOf()
     this.priority = this.#DIRECTION.STOP
-    this.grid = new Grid({
-      col: 11,
-      row: 7,
-    });
-    [[5, 2], [5, 3], [5, 4]].forEach(item => {
-      this.grid.set(item, 'value', 1);
-    });
   }
-
   land () {
+    if (ametal.length == 0) {
+      this.land_2()
+    } else this.land_3()
+  }
+  land_3 () {
     // 当前的坦克实例
     var cur = undefined
     var enr = undefined
@@ -243,8 +60,12 @@ window.playerB = new (class PlayerControl {
 
     var lateEnemy = undefined //距离中心点最近的敌人
     var MindisTank = undefined  //距离自身最近的敌人
-    var lateEnemyLeft = undefined
-    var lateEnemyRight = undefined
+    var lateEnemyLeft = undefined // 左半边距离中心最近的敌人
+    var lateEnemyRight = undefined // 右半边距离中心最近的敌人
+    var RemainTankCount = { // 左右半边剩余的敌人数量
+      LEFT: 0,
+      RIGHT: 0
+    }
     var MinTankdisLeft = 10000
     var MinTankdisRight = 10000
     var MinTankdis = 10000
@@ -255,10 +76,16 @@ window.playerB = new (class PlayerControl {
     var fight = 6
     var escapenum = 0
     var CanAttack = [0, 0, 0, 0]
+    var AttackMode = "normal"
+    /*进攻逻辑 "normal" 正常攻击
+        "save" 敌方越界开始节省子弹
+        "fight" 进入和敌方的缠斗状态
+        "defend" 比分领先即将获胜开始防守
+      */
     for (const enemy of enemyTanks) {
       const dis = this.#calcTwoPointDistance(
         cx,
-        cy,
+        0,
         enemy.X,
         enemy.Y
       )
@@ -268,7 +95,7 @@ window.playerB = new (class PlayerControl {
         enemy.X,
         enemy.Y
       )
-      var i = this.#sacnTank(enemy,
+      var i = this.#sacnTank_2(enemy,
         currentTankX,
         currentTankY,
         currentTankWH,
@@ -282,19 +109,48 @@ window.playerB = new (class PlayerControl {
         MindisTank = enemy
       }
       if (enemy.X <= cx) {
+        RemainTankCount.LEFT += 1
         if (MinTankdisLeft > dis) {
           MinTankdisLeft = dis
           lateEnemyLeft = enemy
         }
       } else {
+        RemainTankCount.RIGHT += 1
         if (MinTankdisRight > dis) {
           MinTankdisRight = dis
           lateEnemyRight = enemy
         }
       }
     }
+    if (enemyTank != undefined) {
+      const disself = this.#calcTwoPointDistance(
+        currentTankX,
+        currentTankY,
+        enemyTank.X,
+        enemyTank.Y
+      )
+      var i = this.#sacnTank_2(enemyTank,
+        currentTankX,
+        currentTankY,
+        currentTankWH,
+        bulletWH)
+      if (i != this.#DIRECTION.STOP) {
+        if (CanAttack[i] == 0 || CanAttack[i] < disself)
+          CanAttack[i] = disself
+      }
+      if (MinTankdis > disself) {
+        MinTankdis = disself
+        MindisTank = enemyTank
+      }
+      if (disself < screenX / 2) {//如果两坦克的距离小于一定值则节省一发子弹
+        AttackMode = "save"
+      }
+    }
     lateEnemy = lateEnemyRight != undefined ? lateEnemyRight : lateEnemyLeft
-    let arrayBullets = aBulletCount/*.concat(eBullets)*/
+    if (enemyTank != undefined) {
+      lateEnemy = enemyTank
+    }
+    let arrayBullets = aBulletCount.concat(eBullets)
     //arrayBullets = arrayBullets.concat(aTankCount)
     var Bullets_is_close = new Array() //子弹是否远离坦克
     var Bullets_col_dis = new Array() //碰撞距离（用来判断子弹是否会碰上坦克）
@@ -310,7 +166,7 @@ window.playerB = new (class PlayerControl {
       Bullets_dis
     )
 
-    moveDirection = this.#avoidBullet(
+    moveDirection = this.#avoidBullet_3(
       arrayBullets,
       currentTankX,
       currentTankY,
@@ -324,38 +180,10 @@ window.playerB = new (class PlayerControl {
       lateEnemy,
       currentTankDirect,
       CanAttack,
-      MindisTank
+      MindisTank,
+      RemainTankCount,
+      AttackMode
     )
-
-    /*moveDirection = this.#avoidBulletBt(
-      arrayBullets,
-      currentTankX,
-      currentTankY,
-      currentTankWH,
-      bulletWH,
-      limitDis,
-      SafeDis,
-      Bullets_is_close,
-      Bullets_col_dis,
-      Bullets_dis,
-      lateEnemy,
-      currentTankDirect
-    )*/
-
-    var t0 = performance.now();
-
-    let astar = new Astar(this.grid);
-    let path = astar.search(
-      [2, 3],                   // start
-      [8, 3],                   // end
-      {                        // option
-        rightAngle: true,    // default:false,Allow diagonal
-        optimalResult: false   // default:true,In a few cases, the speed is slightly slower
-      });
-
-    var t1 = performance.now();
-
-    //console.log('Took', (t1 - t0).toFixed(4), 'milliseconds to generate:', path.length);
 
     var c = new Date().valueOf()
     if (moveDirection[1] == 1) {
@@ -364,10 +192,11 @@ window.playerB = new (class PlayerControl {
         this.#fire()
         document.onkeyup(this.#fireEv)
       }
-    }else if (moveDirection[1] == 2) {
-             this.#fire()
-             document.onkeyup(this.#fireEv)
-        }
+    }
+    else if (moveDirection[1] == 2) {
+      this.#fire()
+      document.onkeyup(this.#fireEv)
+    }
     this.#move(moveDirection[0])
     this.#setName()
   }
@@ -545,7 +374,7 @@ window.playerB = new (class PlayerControl {
         return (!(this.closetColRLDis == 10000 && this.closetColUDDis == 10000))
       },
       CalculatorShortestDirection: function (context) {
-        this.moveDirection = context.#getShortestDirecton(
+        this.moveDirection = context.#getShortestDirecton_3(
           arrayBullets[this.bulletPos].direction,
           Bullets_is_close[this.bulletPos],
           Bullets_col_dis[this.bulletPos],
@@ -596,7 +425,7 @@ window.playerB = new (class PlayerControl {
         this.moveDirection = context.#DIRECTION.STOP;
       },
       CalculatorBoundaryDan: function (context) {
-        context.#isNearBoundaryDan(
+        context.#isNearBoundaryDan_3(
           centerTankX,
           centerTankY,
           currentTankWH,
@@ -619,10 +448,10 @@ window.playerB = new (class PlayerControl {
         } else this.moveDirection = context.#DIRECTION.RIGHT_OR_LEFT
       },
       SetMoveDirectionByMaxDan: function (context) {
-        this.moveDirection = context.#getMaxDan(this.Dan)
+        this.moveDirection = context.#getMaxDan_3(this.Dan)
       },
       DoGogogo: function (context) {
-        this.moveDirection = context.#gogogo(
+        this.moveDirection = context.#gogogo_3(
           lateEnemy,
           currentTankX,
           currentTankY,
@@ -639,7 +468,7 @@ window.playerB = new (class PlayerControl {
   }
 
   //计算躲避子弹要移动的方向
-  #avoidBullet (
+  #avoidBullet_3 (
     arrayBullets,
     currentTankX,
     currentTankY,
@@ -653,7 +482,9 @@ window.playerB = new (class PlayerControl {
     lateEnemy,
     currentTankDirect,
     CanAttack,
-    MindisTank
+    MindisTank,
+    RemainTankCount,
+    AttackMode
   ) {
     const centerTankX = currentTankX + currentTankWH / 2
     const centerTankY = currentTankY + currentTankWH / 2
@@ -692,7 +523,7 @@ window.playerB = new (class PlayerControl {
         Math.abs(Bullets_dis[i]) <= limitDis
       ) {
         //如果即将碰撞的子弹直线距离在极限距离以内，则按照最短路径方向躲避
-        moveDirection = this.#getShortestDirecton(
+        moveDirection = this.#getShortestDirecton_2(
           Bullet.direction,
           Bullets_is_close[i],
           Bullets_col_dis[i],
@@ -729,7 +560,7 @@ window.playerB = new (class PlayerControl {
           Math.pow(Bullets_dis[i], 2) + Math.pow(Bullets_col_dis[i], 2)
         )
         if (dis < 177) {
-          const direction = this.#getShortestDirecton(
+          const direction = this.#getShortestDirecton_2(
             Bullet.direction,
             Bullets_is_close[i],
             Bullets_col_dis[i],
@@ -761,23 +592,26 @@ window.playerB = new (class PlayerControl {
           } else moveDirection = this.#DIRECTION.RIGHT_OR_LEFT
         } else {
           //如果没有碰撞的可能则按照威胁程度进行躲避
-          this.#isNearBoundaryDan(
+          this.#isNearBoundaryDan_2(
             centerTankX,
             centerTankY,
             currentTankWH,
             DanNearBa,
-            4
+            4,
+            RemainTankCount
           )
-          moveDirection = this.#getMaxDan(DanNearBa, Dan, 0.5)
+          moveDirection = this.#getMaxDan_2(DanNearBa, Dan, 0.5)
           // 判断距离最近的坦克保持距离
           if (moveDirection == this.#DIRECTION.STOP) {
-            moveDirection = this.#leaveEne(
-              MindisTank,
-              currentTankX,
-              currentTankY,
-              Dan,
-              100
-            )
+            if (undefined!= MindisTank&& MindisTank.id != 100) {
+              moveDirection = this.#leaveEne_2(
+                MindisTank,
+                currentTankX,
+                currentTankY,
+                Dan,
+                85
+              )
+            }
           }
           if (moveDirection == this.#DIRECTION.STOP) {
             //如果没有威胁则进攻
@@ -791,20 +625,22 @@ window.playerB = new (class PlayerControl {
             DanTemp.DOWN = Dan.DOWN + DanNearBa.DOWN * 2
             DanTemp.LEFT = Dan.LEFT + DanNearBa.LEFT * 2
             DanTemp.RIGHT = Dan.RIGHT + DanNearBa.RIGHT * 2
-            moveDirection = this.#gogogo(
+            if (undefined != MindisTank && MindisTank.id == 100) lateEnemy = MindisTank
+            moveDirection = this.#gogogo_3(
               lateEnemy,
               currentTankX,
               currentTankY,
               currentTankWH,
               bulletWH,
               currentTankDirect,
-              177,
-              DanTemp
+              85,
+              Dan,
+              RemainTankCount
             )
             console.log(Dan)
             console.log(moveDirection)
             if (moveDirection == this.#DIRECTION.STOP) {
-              if (currentTankDirect != TempDirection && this.#aggressiveCheck(Dan, TempDirection, 0.7) != this.#DIRECTION.STOP) {
+              if (currentTankDirect != TempDirection && this.#aggressiveCheck_2(Dan, TempDirection, 0.7) != this.#DIRECTION.STOP) {
                 moveDirection = TempDirection
               }
 
@@ -814,25 +650,150 @@ window.playerB = new (class PlayerControl {
         }
       }
       if (moveDirection != this.#DIRECTION.STOP) {
-        if (moveDirection == this.#DIRECTION.UP_OR_DOWN) {
-          moveDirection =
-            Dan.UP >= Dan.DOWN ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
-        } else if (moveDirection == this.#DIRECTION.RIGHT_OR_LEFT) {
-          moveDirection =
-            Dan.RIGHT >= Dan.LEFT ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
-        }
+        moveDirection = this.#FinalEscape_3(
+          Dan,
+          currentTankX,
+          currentTankY,
+          currentTankWH,
+          moveDirection
+        )
       }
     }
-  
-  if (CanAttack[currentTankDirect] != 0){
-    if(moveDirection==this.#DIRECTION.LEFT){
-  attack = 2      
+    switch (AttackMode) {
+      default:
+      case "normal":
+        if (CanAttack[currentTankDirect] != 0) {
+          if (CanAttack[currentTankDirect] < 300) attack = 1
+          else {
+            if (aMyBulletCount1.length < 3) {
+              attack = 1
+            }
+          }
+        }
+        break
+      case "save":
+        if (CanAttack[currentTankDirect] != 0) {
+          if (this.#IfCanAttack(
+            currentTankX,
+            currentTankY,
+            lateEnemy.X,
+            lateEnemy.Y
+          ) && lateEnemy.id == 200) {
+            attack = 2
+            console.log("----------------------------")
+          }
+          else if (CanAttack[currentTankDirect] < 300 && aMyBulletCount2.length < 4) attack = 1
+          else {
+            if (aMyBulletCount2.length < 3) {
+              attack = 1
+            }
+          }
+        }
+        break
     }
-  attack = 1
-  }
     console.log(CanAttack)
     console.log(moveDirection)
     return [moveDirection, attack]
+  }
+  #IfCanAttack (
+    currentTankX,
+    currentTankY,
+    eX,
+    eY
+  ) {
+    var disX = Math.abs(eX - currentTankX)
+    var disY = Math.abs(eY - currentTankY)
+    var col_dis = 50 / 2 + 10 / 2
+    var a = disX
+    var b = disY
+    if (a < col_dis) {
+      if ((b - 50) / 10 <= (col_dis - a) / 7)
+        return true
+    }
+    var a = disY
+    var b = disX
+    if (a < col_dis) {
+      if ((b - 50) / 10 <= (col_dis - a) / 7)
+        return true
+    }
+    return false
+  }
+  #FinalEscape_3 (
+    Dan,
+    currentTankX,
+    currentTankY,
+    currentTankWH,
+    direction
+  ) {
+    var temp = direction
+    if (direction == this.#DIRECTION.RIGHT_OR_LEFT) {
+      if (Dan.LEFT > Dan.RIGHT)
+        temp = this.#DIRECTION.LEFT
+      else if (Dan.RIGHT > Dan.LEFT)
+        temp = this.#DIRECTION.RIGHT
+      else {
+        if (currentTankX >= screenX / 2) temp = this.#DIRECTION.LEFT
+        else temp = this.#DIRECTION.RIGHT
+      }
+    }
+    else if (direction == this.#DIRECTION.UP_OR_DOWN) {
+      if (Dan.UP > Dan.DOWN)
+        temp = this.#DIRECTION.UP
+      else if (Dan.UP < Dan.DOWN)
+        temp = this.#DIRECTION.DOWN
+      else {
+        if (currentTankY >= screenY / 2) temp = this.#DIRECTION.UP
+        else temp = this.#DIRECTION.DOWN
+      }
+    }
+    else {
+      temp = direction
+    }
+    if (this.#collisionMetal_3(currentTankX, currentTankY, currentTankWH, temp)) {
+      temp = this.#fan(temp)
+    }
+    return temp
+  }
+  #gogoMetal_3 (currentTankX, currentTankY, currentTankWH, direction) {
+
+    if (this.#collisionMetal_3(currentTankX, currentTankY, currentTankWH, direction)) {
+      if (direction == this.#DIRECTION.LEFT || direction == this.#DIRECTION.RIGHT) {
+        if (currentTankY >= screenY / 2) return this.#DIRECTION.UP
+        else return this.#DIRECTION.DOWN
+      }
+      else if (direction == this.#DIRECTION.UP || direction == this.#DIRECTION.DOWN) {
+        if (currentTankX >= screenX / 2) return this.#DIRECTION.LEFT
+        else return this.#DIRECTION.RIGHT
+      }
+    }
+    return direction
+
+  }
+  #leaveEne_3 (
+    lateEnemy,
+    currentTankX,
+    currentTankY,
+    T2TSafeDis
+  ) {
+    let tanksnum = aTankCount.length
+    // T2TSafeDis = T2TSafeDis * tanksnum / 20
+    // if (T2TSafeDis < 60) T2TSafeDis = 60
+    var re = this.#DIRECTION.STOP
+    if (lateEnemy == undefined) return this.#DIRECTION.STOP
+    var disX = lateEnemy.X - currentTankX
+    var disY = lateEnemy.Y - currentTankY
+    if (Math.abs(disX) >= Math.abs(disY)) {
+      if (Math.abs(disX) < T2TSafeDis) {
+        if (disX > 0) re = this.#DIRECTION.LEFT
+        else re = this.#DIRECTION.RIGHT
+      }
+    } else {
+      if (Math.abs(disY) < T2TSafeDis) {
+        if (disY > 0) re = this.#DIRECTION.UP
+        else re = this.#DIRECTION.DOWN
+      }
+    }
+    return re
   }
   // 根据玩家返回正确的方向keyCode
   #helpDirectionKeyCode (direction) {
@@ -868,30 +829,56 @@ window.playerB = new (class PlayerControl {
     document.onkeydown(this.#fireEv)
   }
   // TODO： 扫描轨道   预判走位  并给出开火和移动方向
-  #scanner (currentTank) { }
-  #isNearBoundaryDan (X, Y, currentTankWH, Dan, n) {
+  // 判断是否快到边界了
+  #isNearBoundary (X = 0, Y = 0, currentDirection = undefined, currentTankWH) {
+    if (currentDirection !== undefined) {
+      if (
+        currentDirection === this.#DIRECTION.DOWN &&
+        Y + currentTankWH > screenY
+      ) {
+        return true
+      } else if (currentDirection === this.#DIRECTION.UP && Y < currentTankWH) {
+        return true
+      } else if (
+        currentDirection === this.#DIRECTION.LEFT &&
+        X < currentTankWH
+      ) {
+        return true
+      } else
+        return (
+          currentDirection === this.#DIRECTION.RIGHT &&
+          X + currentTankWH > screenX
+        )
+    }
+
+    return (
+      this.#isNearBoundary(X, Y, this.#DIRECTION.DOWN) ||
+      this.#isNearBoundary(X, Y, this.#DIRECTION.UP) ||
+      this.#isNearBoundary(X, Y, this.#DIRECTION.RIGHT) ||
+      this.#isNearBoundary(X, Y, this.#DIRECTION.LEFT)
+    )
+  }
+  #isNearBoundaryDan_3 (X, Y, currentTankWH, Dan, n) {
     const DisUP = screenY - Y
     const DisDOWN = Y
     const DisLEFT = screenX - X
     const DisRIGHT = X
-    let tanksnum = aTankCount.length
-    if (tanksnum < 10) n = (10 / tanksnum) * n
-    /*Dan.UP +=
-      DisUP < screenY / n ? Math.cos(((DisUP / screenY) * n * Math.PI) / 2) : 0*/
+    Dan.UP +=
+      DisUP < screenY / n ? Math.cos(((DisUP / screenY) * n * Math.PI) / 2) : 0
     Dan.DOWN +=
       DisDOWN < screenY / n
         ? Math.cos(((DisDOWN / screenY) * n * Math.PI) / 2)
         : 0
     Dan.LEFT +=
-      DisLEFT < screenX / n / 4
-        ? Math.cos(((DisLEFT / screenX) * n * 4 * Math.PI) / 2)
+      DisLEFT < screenX / n
+        ? Math.cos(((DisLEFT / screenX) * n * Math.PI) / 2)
         : 0
     Dan.RIGHT +=
-      DisRIGHT < screenX / n / 4
-        ? Math.cos(((DisRIGHT / screenX) * n * 4 * Math.PI) / 2)
+      DisRIGHT < screenX / n
+        ? Math.cos(((DisRIGHT / screenX) * n * Math.PI) / 2)
         : 0
   }
-  #collisionMetal (x, y, r, direction) {
+  #collisionMetal_3 (x, y, r, direction) {
     //障碍阻挡
     switch (direction) {
       case this.#DIRECTION.UP:
@@ -901,10 +888,10 @@ window.playerB = new (class PlayerControl {
         y += 7
         break
       case this.#DIRECTION.LEFT:
-        x += 7
+        x -= 7
         break
       case this.#DIRECTION.RIGHT:
-        x -= 7
+        x += 7
         break
     }
     const metal = ametal
@@ -922,7 +909,24 @@ window.playerB = new (class PlayerControl {
     }
     return false
   }
-  #getShortestDirecton (
+  #fan (direction) {
+    switch (direction) {
+      case this.#DIRECTION.UP:
+        return this.#DIRECTION.DOWN
+
+      case this.#DIRECTION.DOWN:
+        return this.#DIRECTION.UP
+
+      case this.#DIRECTION.LEFT:
+        return this.#DIRECTION.RIGHT
+
+      case this.#DIRECTION.RIGHT:
+        return this.#DIRECTION.LEFT
+      default:
+        return direction
+    }
+  }
+  #getShortestDirecton_3 (
     direction,
     is_close,
     col_dis,
@@ -944,30 +948,25 @@ window.playerB = new (class PlayerControl {
         break
     }
   }
-  #getMaxDan (Dan, Danorigin, wight) {
+  #getMaxDan_3 (Dan) {
     var temp = Dan.UP
     var num = this.#DIRECTION.UP
-    if (Dan.RIGHT > temp && Danorigin.LEFT < wight && Dan.RIGHT > wight) {
+    if (Dan.RIGHT > temp) {
       temp = Dan.RIGHT
       num = this.#DIRECTION.RIGHT
     }
-    if (Dan.DOWN > temp && Danorigin.UP < wight && Dan.DOWN > wight) {
+    if (Dan.DOWN > temp) {
       temp = Dan.DOWN
       num = this.#DIRECTION.DOWN
     }
-    if (Dan.LEFT > temp && Danorigin.RIGHT < wight && Dan.LEFT > wight) {
+    if (Dan.LEFT > temp) {
       temp = Dan.LEFT
       num = this.#DIRECTION.LEFT
     }
     if (temp == 0) return this.#DIRECTION.STOP
-    if (num == this.#DIRECTION.UP && Danorigin.DOWN < wight && Dan.UP > wight) {
-      return num
-    }
-    console.log("保守躲")
-    console.log(Dan, Danorigin)
     return num
   }
-  #gogogo (
+  #gogogo_3 (
     lateEnemy,
     currentTankX,
     currentTankY,
@@ -975,7 +974,8 @@ window.playerB = new (class PlayerControl {
     bulletWH,
     currentTankDirect,
     godis,
-    Dan
+    Dan,
+    RemainTankCount
   ) {
     if (lateEnemy == undefined) return this.#DIRECTION.STOP
     var disX = lateEnemy.X - currentTankX
@@ -1001,70 +1001,25 @@ window.playerB = new (class PlayerControl {
       if (disY < 0) d2 = this.#DIRECTION.UP
       else d2 = this.#DIRECTION.DOWN
     }
-    d1 = this.#aggressiveCheck(Dan, d1, 0.7)
-    d2 = this.#aggressiveCheck(Dan, d2, 0.7)
-    if (d1 == this.#DIRECTION.STOP && Math.abs(disY) > godis) d1 = d2
-    if (d2 == this.#DIRECTION.STOP && Math.abs(disX) > godis) d2 = d1
-    // if (currentTankDirect != d1 && currentTankDirect != d2) {
-    if (this.#aggressiveCheck(Dan, d1, 0.5) == this.#DIRECTION.STOP) return d2
-    if (Math.abs(disX) <= Math.abs(disY) || this.#aggressiveCheck(Dan, d2, 0.5) == this.#DIRECTION.STOP)
+    d1 = this.#gogoMetal_3(currentTankX, currentTankY, currentTankWH, d1)
+    d2 = this.#gogoMetal_3(currentTankX, currentTankY, currentTankWH, d2)
+    d1 = this.#aggressiveCheck_2(Dan, d1, 0.7)//避免进攻时撞在路过的子弹上
+    d2 = this.#aggressiveCheck_2(Dan, d2, 0.7)
+    if (this.#aggressiveCheck_2(Dan, d1, 0.5) == this.#DIRECTION.STOP) return d2
+    if (RemainTankCount.LEFT > 2 || d2 == this.#DIRECTION.UP) {
       return d1
-    else return d2
+    }
+    // if (/*Math.abs(disX) <= Math.abs(disY) ||*/ d1 != this.#DIRECTION.STOP || this.#aggressiveCheck_2(Dan, d2, 0.5) == this.#DIRECTION.STOP)
+    //   return d1
+    // else return d2
     // }
-    // var items = [d1, d2]
-    // return items[Math.floor(Math.random() * items.length)];
+    var items = [d1, d2]
+    return items[Math.floor(Math.random() * items.length)];
     // if (currentTankDirect == d1 && !this.#collisionMetal(currentTankX, currentTankY, currentTankWH, d2)) {
     //   return d2
     // } else return d1
   }
-  #leaveEne (
-    lateEnemy,
-    currentTankX,
-    currentTankY,
-    Dan,
-    T2TSafeDis
-  ) {
-    let tanksnum = aTankCount.length
-    // T2TSafeDis = T2TSafeDis * tanksnum / 20
-    // if (T2TSafeDis < 60) T2TSafeDis = 60
-    var re = this.#DIRECTION.STOP
-    if (lateEnemy == undefined) return this.#DIRECTION.STOP
-    var disX = lateEnemy.X - currentTankX
-    var disY = lateEnemy.Y - currentTankY
-    if (Math.abs(disX) >= Math.abs(disY)) {
-      if (Math.abs(disX) < T2TSafeDis) {
-        if (disY > 0) re = this.#DIRECTION.UP
-        else re = this.#DIRECTION.DOWN
-      }
-    } else {
-      if (Math.abs(disY) < T2TSafeDis) {
-        if (disX > 0) re = this.#DIRECTION.LEFT
-        else re = this.#DIRECTION.RIGHT
-      }
-    }
-
-    re = this.#aggressiveCheck(Dan, re, 0.5)
-    return re
-  }
-  #aggressiveCheck (
-    Dan,
-    direction,
-    weight
-  ) {
-    switch (direction) {
-      case this.#DIRECTION.UP:
-        if (Dan.DOWN > weight) return this.#DIRECTION.STOP
-      case this.#DIRECTION.DOWN:
-        if (Dan.UP > weight) return this.#DIRECTION.STOP
-      case this.#DIRECTION.LEFT:
-        if (Dan.RIGHT > weight) return this.#DIRECTION.STOP
-      case this.#DIRECTION.RIGHT:
-        if (Dan.LEFT > weight) return this.#DIRECTION.STOP
-      default:
-        return direction
-    }
-  }
-  #sacnTank (
+  #sacnTank_3 (
     Tank,
     currentTankX,
     currentTankY,
@@ -1087,6 +1042,599 @@ window.playerB = new (class PlayerControl {
       if (disX < 0)
         return this.#DIRECTION.LEFT
       else return this.#DIRECTION.RIGHT
+    }
+  }
+  land_2 () {
+    // 当前的坦克实例
+    var cur = undefined
+    var enr = undefined
+    aMyTankCount.forEach((element) => {
+      var c = element
+      if (c['id'] == 200) {
+        cur = c
+      }
+      if (c['id'] == 100) {
+        enr = c
+      }
+    })
+    const currentTank = cur
+    const enemyTank = enr
+    if (!currentTank) return
+
+    //下面是方便读取的全局数据的别名
+    // 所有的地方坦克实例数组
+    const enemyTanks = aTankCount
+    // 所有的敌方子弹实例数组
+    const enemyBullets = aBulletCount
+    // 坦克的宽高
+    const currentTankWH = 50
+    // 子弹的宽高
+    const bulletWH = 10
+    // 坦克的x,y  ===> 坦克中心点
+    const currentTankX = currentTank.X
+    const currentTankY = currentTank.Y
+    const currentTankDirect = currentTank.direction
+    //我方子弹
+    const myBullets = this.type === 'A' ? aMyBulletCount1 : aMyBulletCount2
+
+    const eBullets = this.type === 'A' ? aMyBulletCount2 : aMyBulletCount1
+    // 游戏限制的子弹数为5 = aMyBulletCount2
+    const myBulletLimit = 5
+
+    // 当前策略移动方向
+    let moveDirection = undefined
+
+    // 中央逃逸点
+    const cx = canvas.width / 2
+    const cy = canvas.height / 2
+    const limitDis = 75 //极限距离，小于该距离必须朝最近方向躲避
+    const SafeDis = 125 //在极限距离和安全距离间可以综合考虑后躲避
+
+    var lateEnemy = undefined //距离中心点最近的敌人
+    var MindisTank = undefined  //距离自身最近的敌人
+    var lateEnemyLeft = undefined // 左半边距离中心最近的敌人
+    var lateEnemyRight = undefined // 右半边距离中心最近的敌人
+    var RemainTankCount = { // 左右半边剩余的敌人数量
+      LEFT: 0,
+      RIGHT: 0
+    }
+    var MinTankdisLeft = 10000
+    var MinTankdisRight = 10000
+    var MinTankdis = 10000
+    var secruitydistance = currentTankWH * 6
+    var secruitylevel = enemyTanks.length
+    var firedirectdis = 4
+    var escapedir = 4
+    var fight = 6
+    var escapenum = 0
+    var CanAttack = [0, 0, 0, 0]
+    for (const enemy of enemyTanks) {
+      const dis = this.#calcTwoPointDistance(
+        cx,
+        0,
+        enemy.X,
+        enemy.Y
+      )
+      const disself = this.#calcTwoPointDistance(
+        currentTankX,
+        currentTankY,
+        enemy.X,
+        enemy.Y
+      )
+      var i = this.#sacnTank_2(enemy,
+        currentTankX,
+        currentTankY,
+        currentTankWH,
+        bulletWH)
+      if (i != this.#DIRECTION.STOP) {
+        if (CanAttack[i] == 0 || CanAttack[i] < disself)
+          CanAttack[i] = disself
+      }
+      if (MinTankdis > disself) {
+        MinTankdis = disself
+        MindisTank = enemy
+      }
+      if (enemy.X <= cx) {
+        RemainTankCount.LEFT += 1
+        if (MinTankdisLeft > dis) {
+          MinTankdisLeft = dis
+          lateEnemyLeft = enemy
+        }
+      } else {
+        RemainTankCount.RIGHT += 1
+        if (MinTankdisRight > dis) {
+          MinTankdisRight = dis
+          lateEnemyRight = enemy
+        }
+      }
+    }
+    lateEnemy = lateEnemyRight == undefined ? lateEnemyLeft : lateEnemyRight
+    let arrayBullets = aBulletCount/*.concat(eBullets)*/
+    //arrayBullets = arrayBullets.concat(aTankCount)
+    var Bullets_is_close = new Array() //子弹是否远离坦克
+    var Bullets_col_dis = new Array() //碰撞距离（用来判断子弹是否会碰上坦克）
+    var Bullets_dis = new Array() //子弹运动方向和坦克的距离（判断威胁程度）
+    this.#calcBulletDistance(
+      arrayBullets,
+      currentTankX,
+      currentTankY,
+      currentTankWH,
+      bulletWH,
+      Bullets_is_close,
+      Bullets_col_dis,
+      Bullets_dis
+    )
+
+    moveDirection = this.#avoidBullet_2(
+      arrayBullets,
+      currentTankX,
+      currentTankY,
+      currentTankWH,
+      bulletWH,
+      limitDis,
+      SafeDis,
+      Bullets_is_close,
+      Bullets_col_dis,
+      Bullets_dis,
+      lateEnemy,
+      currentTankDirect,
+      CanAttack,
+      MindisTank,
+      RemainTankCount
+    )
+
+    /*moveDirection = this.#avoidBulletBt(
+      arrayBullets,
+      currentTankX,
+      currentTankY,
+      currentTankWH,
+      bulletWH,
+      limitDis,
+      SafeDis,
+      Bullets_is_close,
+      Bullets_col_dis,
+      Bullets_dis,
+      lateEnemy,
+      currentTankDirect
+    )*/
+
+    var c = new Date().valueOf()
+    if (moveDirection[1] == 1) {
+      if (c - this.firetimestamp > 100) {
+        this.firetimestamp = c
+        this.#fire()
+        document.onkeyup(this.#fireEv)
+      }
+    }
+    this.#move(moveDirection[0])
+    this.#setName()
+  }
+  //计算躲避子弹要移动的方向
+  #avoidBullet_2 (
+    arrayBullets,
+    currentTankX,
+    currentTankY,
+    currentTankWH,
+    bulletWH,
+    limitDis,
+    SafeDis,
+    Bullets_is_close,
+    Bullets_col_dis,
+    Bullets_dis,
+    lateEnemy,
+    currentTankDirect,
+    CanAttack,
+    MindisTank,
+    RemainTankCount
+  ) {
+    const centerTankX = currentTankX + currentTankWH / 2
+    const centerTankY = currentTankY + currentTankWH / 2
+    const col_dis = currentTankWH / 2 + bulletWH / 2
+    var limitDirect = 0 //是否按最短路径躲避
+    var moveDirection = this.#DIRECTION.STOP // 躲避方向
+    var closetColUDDis = 10000
+    var closetColRLDis = 10000
+    var attack = 0 //是否攻击
+    var TempDirection = 4
+    //往各个方向躲避的系数
+    var Dan = {
+      UP: 0,
+      RIGHT: 0,
+      DOWN: 0,
+      LEFT: 0,
+    }
+    var DanNearBa = {
+      UP: 0,
+      RIGHT: 0,
+      DOWN: 0,
+      LEFT: 0,
+    }
+    for (var i = 0; i < arrayBullets.length; i++) {
+      const Bullet = arrayBullets[i]
+      if (
+        !Bullets_is_close[i] &&
+        (Math.abs(Bullets_col_dis[i]) > col_dis + 7 ||
+          Math.abs(Bullets_dis[i]) > col_dis)
+      )
+        //如果子弹是远离的并且在下一个阶段不可能产生碰撞则不考虑
+        continue
+      else if (
+        Bullets_is_close[i] &&
+        Math.abs(Bullets_col_dis[i]) <= col_dis &&
+        Math.abs(Bullets_dis[i]) <= limitDis
+      ) {
+        //如果即将碰撞的子弹直线距离在极限距离以内，则按照最短路径方向躲避
+        moveDirection = this.#getShortestDirecton_2(
+          Bullet.direction,
+          Bullets_is_close[i],
+          Bullets_col_dis[i],
+          Bullets_dis[i]
+        )
+        console.log('buxingle')
+        if (moveDirection <= 4) limitDirect = 1
+      } else if (
+        Bullets_is_close[i] &&
+        Math.abs(Bullets_col_dis[i]) <= col_dis &&
+        /*Math.abs(Bullets_dis[i]) > limitDis &&*/
+        Math.abs(Bullets_dis[i]) <= SafeDis
+      ) {
+        //计算在安全距离内会发生碰撞的最近的子弹
+        switch (Bullet.direction) {
+          case this.#DIRECTION.UP:
+          case this.#DIRECTION.DOWN:
+            closetColUDDis =
+              Math.abs(Bullets_dis[i]) < closetColUDDis
+                ? Math.abs(Bullets_dis[i])
+                : closetColUDDis
+            break
+          case this.#DIRECTION.LEFT:
+          case this.#DIRECTION.RIGHT:
+            closetColRLDis =
+              Math.abs(Bullets_dis[i]) < closetColRLDis
+                ? Math.abs(Bullets_dis[i])
+                : closetColRLDis
+            break
+        }
+      } else {
+        //计算不会碰上但是有威胁的
+        var dis = Math.sqrt(
+          Math.pow(Bullets_dis[i], 2) + Math.pow(Bullets_col_dis[i], 2)
+        )
+        if (dis < 177) {
+          const direction = this.#getShortestDirecton_2(
+            Bullet.direction,
+            Bullets_is_close[i],
+            Bullets_col_dis[i],
+            Bullets_dis[i]
+          )
+          var weight = Math.cos(((dis / 177) * Math.PI) / 2)
+          switch (direction) {
+            case this.#DIRECTION.UP:
+              Dan.UP += weight
+              break
+            case this.#DIRECTION.DOWN:
+              Dan.DOWN += weight
+              break
+            case this.#DIRECTION.LEFT:
+              Dan.LEFT += weight
+              break
+            case this.#DIRECTION.RIGHT:
+              Dan.RIGHT += weight
+              break
+          }
+        }
+      }
+    }
+    if (limitDirect != 1) {
+      if (moveDirection == this.#DIRECTION.STOP) {
+        if (!(closetColRLDis == 10000 && closetColUDDis == 10000)) {
+          if (closetColRLDis <= closetColUDDis) {
+            moveDirection = this.#DIRECTION.UP_OR_DOWN
+          } else moveDirection = this.#DIRECTION.RIGHT_OR_LEFT
+        } else {
+          //如果没有碰撞的可能则按照威胁程度进行躲避
+          this.#isNearBoundaryDan_2(
+            centerTankX,
+            centerTankY,
+            currentTankWH,
+            DanNearBa,
+            4,
+            RemainTankCount
+          )
+          moveDirection = this.#getMaxDan_2(DanNearBa, Dan, 0.5)
+          // 判断距离最近的坦克保持距离
+          if (moveDirection == this.#DIRECTION.STOP) {
+            moveDirection = this.#leaveEne_2(
+              MindisTank,
+              currentTankX,
+              currentTankY,
+              Dan,
+              100
+            )
+          }
+          if (moveDirection == this.#DIRECTION.STOP) {
+            //如果没有威胁则进攻
+            var DanTemp = {
+              UP: 0,
+              DOWN: 0,
+              LEFT: 0,
+              RIGHT: 0,
+            }
+            DanTemp.UP = Dan.UP + DanNearBa.UP * 2
+            DanTemp.DOWN = Dan.DOWN + DanNearBa.DOWN * 2
+            DanTemp.LEFT = Dan.LEFT + DanNearBa.LEFT * 2
+            DanTemp.RIGHT = Dan.RIGHT + DanNearBa.RIGHT * 2
+            moveDirection = this.#gogogo_2(
+              lateEnemy,
+              currentTankX,
+              currentTankY,
+              currentTankWH,
+              bulletWH,
+              currentTankDirect,
+              100,
+              Dan,
+              RemainTankCount
+            )
+            console.log(Dan)
+            console.log(moveDirection)
+            if (moveDirection == this.#DIRECTION.STOP) {
+              if (currentTankDirect != TempDirection && this.#aggressiveCheck_2(Dan, TempDirection, 0.7) != this.#DIRECTION.STOP) {
+                moveDirection = TempDirection
+              }
+
+            }
+            console.log('进攻')
+          }
+        }
+      }
+      if (moveDirection != this.#DIRECTION.STOP) {
+        moveDirection = this.#FinalEscape_2(
+          Dan,
+          centerTankX,
+          centerTankY,
+          moveDirection
+        )
+      }
+    }
+    if (CanAttack[currentTankDirect] != 0) {
+      if (CanAttack[currentTankDirect] < 300) attack = 1
+      else {
+        if (aMyBulletCount2.length < 4) {
+          attack = 1
+        }
+      }
+    }
+    console.log(CanAttack)
+    console.log(moveDirection)
+    return [moveDirection, attack]
+  }
+  #isNearBoundaryDan_2 (X, Y, currentTankWH, Dan, n, RemainTankCount) {
+    const DisUP = screenY - Y
+    const DisDOWN = Y
+    const DisLEFT = screenX - X
+    const DisRIGHT = X
+    let tanksnum = aTankCount.length
+    if (tanksnum < 10) n = (10 / tanksnum) * n
+    var m = RemainTankCount.LEFT * 10
+    // n = (20 / tanksnum) * n
+    /*Dan.UP +=
+      DisUP < screenY / n ? Math.cos(((DisUP / screenY) * n * Math.PI) / 2) : 0*/
+    Dan.DOWN +=
+      DisDOWN < screenY / n
+        ? Math.cos(((DisDOWN / screenY) * n * Math.PI) / 2)
+        : 0
+    Dan.LEFT +=
+      DisLEFT < m
+        ? Math.cos(((m / 100) * Math.PI) / 2)
+        : 0
+    Dan.RIGHT +=
+      DisRIGHT < screenX / n / 4
+        ? Math.cos(((DisRIGHT / screenX) * n * 4 * Math.PI) / 2)
+        : 0
+  }
+  #getShortestDirecton_2 (
+    direction,
+    is_close,
+    col_dis,
+    dis
+  ) {
+    //获取要躲避子弹i的最短路径方向    
+    switch (direction) {
+      case this.#DIRECTION.UP:
+      case this.#DIRECTION.DOWN:
+        if (col_dis < 0) return this.#DIRECTION.RIGHT
+        else if (col_dis > 0) return this.#DIRECTION.LEFT
+        else return this.#DIRECTION.RIGHT_OR_LEFT
+        break
+      case this.#DIRECTION.LEFT:
+      case this.#DIRECTION.RIGHT:
+        if (col_dis > 0) return this.#DIRECTION.UP
+        else if (col_dis < 0) return this.#DIRECTION.DOWN
+        else return this.#DIRECTION.UP_OR_DOWN
+        break
+    }
+  }
+  #getMaxDan_2 (Dan, Danorigin, wight) {
+    var temp = Dan.UP
+    var num = this.#DIRECTION.UP
+    if (Dan.RIGHT > temp && Danorigin.LEFT < wight && Dan.RIGHT > wight) {
+      temp = Dan.RIGHT
+      num = this.#DIRECTION.RIGHT
+    }
+    if (Dan.DOWN > temp && Danorigin.UP < wight && Dan.DOWN > wight) {
+      temp = Dan.DOWN
+      num = this.#DIRECTION.DOWN
+    }
+    if (Dan.LEFT > temp && Danorigin.RIGHT < wight && Dan.LEFT > wight) {
+      temp = Dan.LEFT
+      num = this.#DIRECTION.LEFT
+    }
+    if (temp == 0) return this.#DIRECTION.STOP
+    if (num == this.#DIRECTION.UP && Danorigin.DOWN < wight && Dan.UP > wight) {
+      return num
+    }
+    console.log("保守躲")
+    console.log(Dan, Danorigin)
+    return num
+  }
+  #gogogo_2 (
+    lateEnemy,
+    currentTankX,
+    currentTankY,
+    currentTankWH,
+    bulletWH,
+    currentTankDirect,
+    godis,
+    Dan,
+    RemainTankCount
+  ) {
+    if (lateEnemy == undefined) return this.#DIRECTION.STOP
+    var disX = lateEnemy.X - currentTankX
+    var disY = lateEnemy.Y - currentTankY
+    var col_dis = currentTankWH / 2 + bulletWH / 2
+    var d1 = this.#DIRECTION.STOP
+    var d2 = this.#DIRECTION.STOP
+    if (Math.abs(disX) < col_dis) {
+      if (disY > 0 && (Math.abs(disY) > godis || currentTankDirect != this.#DIRECTION.DOWN)) {
+        d1 = this.#DIRECTION.DOWN
+      } else if (disY <= 0 && (Math.abs(disY) > godis || currentTankDirect != this.#DIRECTION.UP))
+        d1 = this.#DIRECTION.UP
+    } else {
+      if (disX < 0) d1 = this.#DIRECTION.LEFT
+      else d1 = this.#DIRECTION.RIGHT
+    }
+    if (Math.abs(disY) < col_dis) {
+      if (disX < 0 && (Math.abs(disX) > godis || currentTankDirect != this.#DIRECTION.LEFT))
+        d2 = this.#DIRECTION.LEFT
+      else if (disX >= 0 && (Math.abs(disX) > godis || currentTankDirect != this.#DIRECTION.RIGHT))
+        d2 = this.#DIRECTION.RIGHT
+    } else {
+      if (disY < 0) d2 = this.#DIRECTION.UP
+      else d2 = this.#DIRECTION.DOWN
+    }
+    d1 = this.#aggressiveCheck_2(Dan, d1, 0.7)//避免进攻时撞在路过的子弹上
+    d2 = this.#aggressiveCheck_2(Dan, d2, 0.7)
+    // if (d1 == this.#DIRECTION.STOP && Math.abs(disY) > godis) d1 = d2
+    // if (d2 == this.#DIRECTION.STOP && Math.abs(disX) > godis) d2 = d1
+    // if (currentTankDirect != d1 && currentTankDirect != d2) {
+    if (this.#aggressiveCheck_2(Dan, d1, 0.5) == this.#DIRECTION.STOP) return d2
+    if (RemainTankCount.LEFT > 2 || d2 == this.#DIRECTION.UP) {
+      return d1
+    }
+    // if (/*Math.abs(disX) <= Math.abs(disY) ||*/ d1 != this.#DIRECTION.STOP || this.#aggressiveCheck_2(Dan, d2, 0.5) == this.#DIRECTION.STOP)
+    //   return d1
+    // else return d2
+    // }
+    var items = [d1, d2]
+    return items[Math.floor(Math.random() * items.length)];
+    // if (currentTankDirect == d1 && !this.#collisionMetal(currentTankX, currentTankY, currentTankWH, d2)) {
+    //   return d2
+    // } else return d1
+  }
+  #leaveEne_2 (
+    lateEnemy,
+    currentTankX,
+    currentTankY,
+    Dan,
+    T2TSafeDis
+  ) {
+    let tanksnum = aTankCount.length
+    // T2TSafeDis = T2TSafeDis * tanksnum / 20
+    // if (T2TSafeDis < 60) T2TSafeDis = 60
+    var re = this.#DIRECTION.STOP
+    if (lateEnemy == undefined) return this.#DIRECTION.STOP
+    var disX = lateEnemy.X - currentTankX
+    var disY = lateEnemy.Y - currentTankY
+    if (Math.abs(disX) >= Math.abs(disY)) {
+      if (Math.abs(disX) < T2TSafeDis) {
+        if (disX > 0) re = this.#DIRECTION.LEFT
+        else re = this.#DIRECTION.RIGHT
+      }
+    } else {
+      if (Math.abs(disY) < T2TSafeDis) {
+        if (disY > 0) re = this.#DIRECTION.UP
+        else re = this.#DIRECTION.DOWN
+      }
+    }
+    re = this.#aggressiveCheck_2(Dan, re, 0.5)
+    return re
+  }
+  #aggressiveCheck_2 (
+    Dan,
+    direction,
+    weight
+  ) {
+    switch (direction) {
+      case this.#DIRECTION.UP:
+        if (Dan.DOWN > weight) return this.#DIRECTION.STOP
+        else return direction
+      case this.#DIRECTION.DOWN:
+        if (Dan.UP > weight) return this.#DIRECTION.STOP
+        else return direction
+      case this.#DIRECTION.LEFT:
+        if (Dan.RIGHT > weight) return this.#DIRECTION.STOP
+        else return direction
+      case this.#DIRECTION.RIGHT:
+        if (Dan.LEFT > weight) return this.#DIRECTION.STOP
+        else return direction
+      default:
+        return direction
+    }
+  }
+  #sacnTank_2 (
+    Tank,
+    currentTankX,
+    currentTankY,
+    currentTankWH,
+    bulletWH,
+  ) {
+    if (Tank == undefined) return this.#DIRECTION.STOP
+    var disX = Tank.X - currentTankX
+    var disY = Tank.Y - currentTankY
+    var col_dis = currentTankWH / 2 + bulletWH / 2
+    if (Math.abs(disX) > col_dis && Math.abs(disY) > col_dis) {
+      return this.#DIRECTION.STOP
+    }
+    else if (Math.abs(disX) < col_dis) {
+      if (disY > 0) {
+        return this.#DIRECTION.DOWN
+      } else
+        return this.#DIRECTION.UP
+    } else {
+      if (disX < 0)
+        return this.#DIRECTION.LEFT
+      else return this.#DIRECTION.RIGHT
+    }
+  }
+  #FinalEscape_2 (
+    Dan,
+    currentTankX,
+    currentTankY,
+    direction
+  ) {
+    if (direction == this.#DIRECTION.RIGHT_OR_LEFT) {
+      if (Dan.LEFT > Dan.RIGHT)
+        return this.#DIRECTION.LEFT
+      else if (Dan.RIGHT > Dan.LEFT)
+        return this.#DIRECTION.RIGHT
+      else {
+        if (currentTankX >= screenX / 2) return this.#DIRECTION.LEFT
+        else return this.#DIRECTION.RIGHT
+      }
+    }
+    else if (direction == this.#DIRECTION.UP_OR_DOWN) {
+      if (Dan.UP > Dan.DOWN)
+        return this.#DIRECTION.UP
+      else if (Dan.UP < Dan.DOWN)
+        return this.#DIRECTION.DOWN
+      else {
+        if (currentTankY >= screenY / 2) return this.#DIRECTION.UP
+        else return this.#DIRECTION.DOWN
+      }
+
+    }
+    else {
+      return direction
     }
   }
 })('B')
