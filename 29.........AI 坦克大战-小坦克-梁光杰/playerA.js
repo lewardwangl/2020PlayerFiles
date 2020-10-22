@@ -13,6 +13,7 @@ function Behaviac(object, context) {
     //bt:行为树描述
     this.run = function (bt) {
         var first_children = bt.children[0];
+        //console.log("first::", first_children.type)
         this[first_children.type](first_children);
     };
 
@@ -24,11 +25,14 @@ function Behaviac(object, context) {
         let childArray = this.confirm_array(node.children);
         for (var child in childArray) {
             var childValue = node.children[child];
+            //console.log("Selecter  type:", childValue.type, childValue.func);
             //调用子节点
             if (this[childValue.type](childValue) == true) {
+                //console.log("Selecter  type: true:", childValue.type, childValue.func);
                 return_value = true;
                 break;
             } else {
+                //console.log("Selecter  type: false:", childValue.type, childValue.func);
             }
         }
         return return_value;
@@ -44,11 +48,14 @@ function Behaviac(object, context) {
             if (recycle.indexOf(value) == -1) {
                 recycle.push(value);
                 var childValue = node.children[value];
+                //console.log("RandomSelector  type:", childValue.type, childValue.func);
                 //调用子节点
                 if (this[childValue.type](childValue) == true) {
+                    //console.log("RandomSelector  type: true:", childValue.type, childValue.func);
                     return_value = true;
                     break;
                 } else {
+                    //console.log("RandomSelector  type: false:", childValue.type, childValue.func);
                 }
             }
         }
@@ -61,11 +68,14 @@ function Behaviac(object, context) {
         let childArray = this.confirm_array(node.children);
         for (var child in childArray) {
             var childValue = childArray[child];
+            //console.log("Sequence type:", childValue.type, childValue.func);
             //调用子节点
             if (this[childValue.type](childValue) == false) {
+                //console.log("Sequence type: false:", childValue.type, childValue.func);
                 return_value = false;
                 break;
             } else {
+                //console.log("Sequence type: true:", childValue.type, childValue.func);
             }
         }
         return return_value;
@@ -80,11 +90,14 @@ function Behaviac(object, context) {
             if (recycle.indexOf(value) == -1) {
                 recycle.push(value);
                 var childValue = node.children[value];
+                //console.log("RandomSequence  type:", childValue.type, childValue.func);
                 //调用子节点
                 if (this[childValue.type](childValue) == false) {
+                    //console.log("RandomSequence type: false:", childValue.type, childValue.func);
                     return_value = false;
                     break;
                 } else {
+                    //console.log("RandomSequence type: true:", childValue.type, childValue.func);
                 }
             }
         }
@@ -115,6 +128,7 @@ function Behaviac(object, context) {
 
     //如果Filter为真，则执行子节点，并返回true；否则，不执行子节点，返回false。
     this.Filter = function (node) {
+        //console.log("Filter:", node.func);
         if (this.object[node.func](this.context)) {
             var first_children = node.children[0];
             return this[first_children.type](first_children);//执行指定【类型】函数
@@ -129,8 +143,10 @@ function Behaviac(object, context) {
     this.Inverter = function (node) {
         var first_children = node.children[0];
         if (this[first_children.type](first_children) == true) {
+            //console.log("Inverter type: true[->false] ", first_children.type, first_children.func);
             return false;
         } else {
+            //console.log("Inverter type: false[->true] ", first_children.type, first_children.func);
             return true;
         }
     }
@@ -138,6 +154,7 @@ function Behaviac(object, context) {
     //忽视子节点的返回，强制返回true
     this.Succeeder = function (node) {
         var first_children = node.children[0];
+        //console.log("Succeeder type:", first_children.type, first_children.func);
         this[first_children.type](first_children);
         return true;
     }
@@ -146,6 +163,7 @@ function Behaviac(object, context) {
     this.RepeatUntilFail = function (node) {
         var first_children = node.children[0];
         while (true) {
+            //console.log("RepeatUntilFail type:", first_children.type, first_children.func);
             if (this[first_children.type](first_children) == false) {
                 break;
             }
@@ -470,6 +488,7 @@ window.playerA = new (class PlayerControl {
 
         var t1 = performance.now();
 
+        //console.log('Took', (t1 - t0).toFixed(4), 'milliseconds to generate:', path.length);
 
         var c = new Date().valueOf()
         if (moveDirection[1] == 1) {
@@ -1436,6 +1455,7 @@ window.playerA = new (class PlayerControl {
                 )
             },
             SettingLimitDirection: function (context) {
+                console.log('buxingle')
                 if (this.moveDirection <= 4) this.limitDirect = 1
             },
             CalculatorCloset: function (context) {
@@ -1512,6 +1532,7 @@ window.playerA = new (class PlayerControl {
                     bulletWH,
                     currentTankDirect
                 )
+                console.log('进攻')
             }
         }
         var BT = new Behaviac(bt_realize, this)
@@ -1579,6 +1600,7 @@ window.playerA = new (class PlayerControl {
                     Bullets_col_dis[i],
                     Bullets_dis[i]
                 )
+                console.log('buxingle')
                 if (moveDirection <= 4) limitDirect = 1
             } else if (
                 Bullets_is_close[i] &&
@@ -1681,12 +1703,15 @@ window.playerA = new (class PlayerControl {
                             85,
                             DanTemp
                         )
+                        console.log(Dan)
+                        console.log(moveDirection)
                         if (moveDirection == this.#DIRECTION.STOP) {
                             if (currentTankDirect != TempDirection && this.#aggressiveCheck(Dan, TempDirection, 0.7) != this.#DIRECTION.STOP) {
                                 moveDirection = TempDirection
                             }
 
                         }
+                        console.log('进攻')
                     }
                 }
             }
@@ -1711,7 +1736,12 @@ window.playerA = new (class PlayerControl {
         }
         if (moveDirection == this.#DIRECTION.RIGHT) {
             attack = 2
-        } 
+        } else {
+            if (CanAttack[currentTankDirect] != 0)
+                attack = 1
+        }
+        console.log(CanAttack)
+        console.log(moveDirection)
         return [moveDirection, attack]
     }
 
@@ -1854,6 +1884,8 @@ window.playerA = new (class PlayerControl {
         if (num == this.#DIRECTION.UP && Danorigin.DOWN < wight && Dan.UP > wight) {
             return num
         }
+        console.log("保守躲")
+        console.log(Dan, Danorigin)
         return num
     }
 
@@ -1897,9 +1929,9 @@ window.playerA = new (class PlayerControl {
         if (d2 == this.#DIRECTION.STOP && Math.abs(disX) > godis) d2 = d1
         // if (currentTankDirect != d1 && currentTankDirect != d2) {
         if (this.#aggressiveCheck(Dan, d1, 0.5) == this.#DIRECTION.STOP) return d2
-        if (/*Math.abs(disX) <= Math.abs(disY) ||*/ d1 != this.#DIRECTION.STOP || this.#aggressiveCheck(Dan, d2, 0.5) == this.#DIRECTION.STOP)
-            return d1
-        else return d2
+        if (/*Math.abs(disX) <= Math.abs(disY) ||*/ d2 != this.#DIRECTION.STOP || this.#aggressiveCheck(Dan, d1, 0.5) == this.#DIRECTION.STOP)
+            return d2
+        else return d1
         // }
         // var items = [d1, d2]
         // return items[Math.floor(Math.random() * items.length)];

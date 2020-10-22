@@ -68,7 +68,7 @@ window.playerA = new (class PlayerControl {
     var secruitydistance = currentTankWH * 4     //安全距离
     var secruitylevel = enemyTanks.length       //坦克的数量
     var firedirectdis = 4                     // 根据最近坦克的距离大于firedirectdis*currentTankWH调整炮口
-    var escapedir = 1                       // 距离小于多少时逃跑
+    var escapedir = 2                       // 距离小于多少时逃跑
     var fight = 3                           // 大于多少个安全距离时追击
     var escapenum = 0                      // 逃跑系数
 

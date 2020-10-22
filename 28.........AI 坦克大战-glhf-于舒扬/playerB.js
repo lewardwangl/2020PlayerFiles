@@ -16,10 +16,10 @@ window.playerB = new (class PlayerControl {
     var enr = undefined
     aMyTankCount.forEach(element => {
       var c = element
-      if (c['id'] == 100) {
+      if (c['id'] == 200) {
         cur = c
       }
-      if (c['id'] == 200) {
+      if (c['id'] == 100) {
         enr = c
       }
     });
@@ -73,7 +73,7 @@ window.playerB = new (class PlayerControl {
     var secruitylevel = enemyTanks.length
     var firedirectdis = 4
     var escapedir = 4
-    var fight = 5
+    var fight = 4
     var escapenum = 0
 
     for (const enemy of enemyTanks) {

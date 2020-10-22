@@ -85,8 +85,6 @@ window.playerB = new (class PlayerControl {
     }
     //添加躲避坦克的方向
     let latelyTank = this.#dirFilter(scopeDis, myTank, aiTanks, tankWH, escapeDirs, scopeTanks, fireDirs, myAiTanks, enTank, enBullets, bulletWH);
-    //追击坦克靠近的最小距离
-    let atkDis = latelyTank === enTank ? (2.5*tankWH) : (3.5*tankWH);
 
     //moveDirection = this.#avoidTank(myTank, centerDirs, scanBullets, tankWH, bulletWH, alreadyTryDirs);
 
@@ -96,7 +94,7 @@ window.playerB = new (class PlayerControl {
     }
     //追击敌方坦克
     if(moveDirection == undefined) {
-      moveDirection = this.#attackTank(atkDis, myTank, latelyTank, tankWH, bulletWH, scanBullets, myAiTanks, enTank, enBullets, alreadyTryDirs);
+      moveDirection = this.#attackTank(myTank, latelyTank, tankWH, bulletWH, scanBullets, myAiTanks, enTank, enBullets, alreadyTryDirs);
     }
     //可以停留，直接开炮
     if(moveDirection == undefined) {
@@ -356,7 +354,7 @@ window.playerB = new (class PlayerControl {
         if (isCollision) {
           return true;
         }
-      }else if(this.#DIRECTION.DOWN == bullet.direction && bullet.Y+bulletWH/2 < tank.Y && bullet.X+bulletWH/2 >= tank.X && bullet.X-bulletWH/2 <= tank.X+tankWH){
+      }else if(this.#DIRECTION.DOWN == bullet.direction && bulletY+bulletWH/2 < tank.Y && bulletX+bulletWH/2 >= tank.X && bulletX-bulletWH/2 <= tank.X+tankWH){
         //横向差距
         let edgeDisToL = (tank.X+tankWH) - (bulletX - bulletWH/2);
         let edgeDisToR = (bulletX + bulletWH/2) - tank.X;
@@ -374,7 +372,7 @@ window.playerB = new (class PlayerControl {
         if(!canMoveFormT_ToL && !canMoveFormT_ToR){
           return true;
         }
-      }else if(this.#DIRECTION.UP == bullet.direction && bullet.Y-bulletWH/2 > tank.Y+tankWH && bullet.X+bulletWH/2 >= tank.X && bullet.X-bulletWH/2 <= tank.X+tankWH){
+      }else if(this.#DIRECTION.UP == bullet.direction && bulletY-bulletWH/2 > tank.Y+tankWH && bulletX+bulletWH/2 >= tank.X && bulletX-bulletWH/2 <= tank.X+tankWH){
         //横向差距
         let edgeDisToL = (tank.X+tankWH) - (bulletX - bulletWH/2);
         let edgeDisToR = (bulletX + bulletWH/2) - tank.X;
@@ -392,7 +390,7 @@ window.playerB = new (class PlayerControl {
         if(!canMoveFormD_ToL && !canMoveFormD_ToR){
           return true;
         }
-      }else if(this.#DIRECTION.RIGHT == bullet.direction && bullet.X+bulletWH/2 < tank.X && bullet.Y+bulletWH/2 >= tank.Y && bullet.Y-bulletWH/2 <= tank.Y+tankWH){
+      }else if(this.#DIRECTION.RIGHT == bullet.direction && bulletX+bulletWH/2 < tank.X && bulletY+bulletWH/2 >= tank.Y && bulletY-bulletWH/2 <= tank.Y+tankWH){
         //横向差距
         let edgeDisX = tank.X - (bulletX + bulletWH/2);
         if(edgeDisX <= bullet.speed){
@@ -410,7 +408,7 @@ window.playerB = new (class PlayerControl {
         if(!canMoveFormL_ToT && !canMoveFormL_ToD) {
           return true;
         }
-      }else if(this.#DIRECTION.LEFT == bullet.direction && bullet.X-bulletWH/2 > tank.X+tankWH && bullet.Y+bulletWH/2 >= tank.Y && bullet.Y-bulletWH/2 <= tank.Y+tankWH){
+      }else if(this.#DIRECTION.LEFT == bullet.direction && bulletX-bulletWH/2 > tank.X+tankWH && bulletY+bulletWH/2 >= tank.Y && bulletY-bulletWH/2 <= tank.Y+tankWH){
         //横向差距
         let edgeDisX = (bulletX - bulletWH/2) - (tank.X+tankWH) ;
         if(edgeDisX <= bullet.speed){
@@ -753,9 +751,9 @@ window.playerB = new (class PlayerControl {
       }
     }
     if(fireDis > screenX*0.75){
-      mis = 500;
-    }else if(fireDis > screenX*0.5){
       mis = 400;
+    }else if(fireDis > screenX*0.5){
+      mis = 300;
     }else if(fireDis > screenX*0.25){
       mis = 200;
     }
@@ -768,7 +766,7 @@ window.playerB = new (class PlayerControl {
   }
 
   //追击坦克
-  #attackTank(atkDis, myTank, latelyTank, tankWH, bulletWH, bullets, myAiTanks, enTank, enBullets, alreadyTryDirs){
+  #attackTank(myTank, latelyTank, tankWH, bulletWH, bullets, myAiTanks, enTank, enBullets, alreadyTryDirs){
 
     let moveDir = undefined;
     if(latelyTank == undefined){
@@ -804,7 +802,7 @@ window.playerB = new (class PlayerControl {
     let atkDisY = Math.abs(myTank.Y - latelyTank.Y);//纵向差距
 
     let moveDirArry = [];
-    if(myAiTanks.length > 5 || atkDisX > atkDis*2){
+    if(myAiTanks.length > 5 || atkDisX > screenX/5){
       if(myAiTanks.length > 5){
         if(myTank.X<screenX/2){
           myAiTanks.sort(function (a, b) { return b.X - a.X;});
@@ -814,10 +812,19 @@ window.playerB = new (class PlayerControl {
         latelyTank = myAiTanks[1];
       }else {
         if(myTank.Y < 5*tankWH){
-          moveDirArry.push(this.#DIRECTION.DOWN);
+          let n = Math.floor(Math.random()*2);
+          if(n == 0){
+            moveDirArry.push(this.#DIRECTION.DOWN);
+          }else {
+            if(myTank.X < latelyTank.X){
+              moveDirArry.push(this.#DIRECTION.RIGHT);
+            }else {
+              moveDirArry.push(this.#DIRECTION.LEFT);
+            }
+          }
         }
       }
-      if(atkDisX > 25){
+      if(atkDisX > 30){
         if(myTank.X > latelyTank.X){
           moveDirArry.push(this.#DIRECTION.LEFT);
         }else {
@@ -828,7 +835,7 @@ window.playerB = new (class PlayerControl {
         }else{
           moveDirArry.push(this.#DIRECTION.DOWN);
         }
-      }else if(atkDisY > 25){
+      }else if(atkDisY > 30){
         if(myTank.Y > latelyTank.Y){
           moveDirArry.push(this.#DIRECTION.UP);
         }else {

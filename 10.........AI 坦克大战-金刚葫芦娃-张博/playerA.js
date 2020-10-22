@@ -136,25 +136,25 @@ window.playerA = new (class PlayerControl {
                         moveDirection = this.#DIRECTION.UP;
                     } else if ((disX <= disY) && (lateEnemy.Y >= currentTankY) && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20] && this.#DIRECTION.UP != Bullet[22] && this.#DIRECTION.UP != Bullet[24]) {
                         moveDirection = this.#DIRECTION.DOWN;
-                    } else if ((disX > disY) && (lateEnemy.X >= currentTankX) && this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23] && this.#DIRECTION.LEFT != Bullet[14] && this.#DIRECTION.LEFT != Bullet[15]) {
-                        moveDirection = this.#DIRECTION.RIGHT;
                     } else if ((disX >= disY) && (lateEnemy.X < currentTankX) && this.#DIRECTION.DOWN != Bullet[1] && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17] && this.#DIRECTION.RIGHT != Bullet[10] && this.#DIRECTION.RIGHT != Bullet[9] && this.#DIRECTION.UP != Bullet[21]) {
                         moveDirection = this.#DIRECTION.LEFT;
+                    } else if ((disX > disY) && (lateEnemy.X >= currentTankX) && this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23] && this.#DIRECTION.LEFT != Bullet[14] && this.#DIRECTION.LEFT != Bullet[15]) {
+                        moveDirection = this.#DIRECTION.RIGHT;
                     }
                     console.log("战术前进", moveDirection)
                 } else if (dis < escapedir * currentTankWH) {  //逃跑 判断条件放宽 STOP 改成RIGHT
                     if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.DOWN, currentTankWH
-                    )/*(disX < disY) && (lateEnemy.Y < currentTankY) &&*/ && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20] && this.#DIRECTION.UP != Bullet[22] && this.#DIRECTION.UP != Bullet[24]) {
+                    ) && (disX < disY) && (lateEnemy.Y < currentTankY) && this.#DIRECTION.RIGHT != Bullet[16] && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19] && this.#DIRECTION.LEFT != Bullet[20] && this.#DIRECTION.UP != Bullet[22] && this.#DIRECTION.UP != Bullet[24]) {
                         moveDirection = this.#DIRECTION.DOWN;
                     } else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.UP, currentTankWH
-                    )/*(disX < disY) && (lateEnemy.Y >= currentTankY) &&*/ && this.#DIRECTION.RIGHT != Bullet[4] && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.LEFT != Bullet[8] && this.#DIRECTION.DOWN != Bullet[2] && this.#DIRECTION.DOWN != Bullet[0]) {
+                    ) && (disX < disY) && (lateEnemy.Y >= currentTankY) && this.#DIRECTION.RIGHT != Bullet[4] && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.LEFT != Bullet[8] && this.#DIRECTION.DOWN != Bullet[2] && this.#DIRECTION.DOWN != Bullet[0]) {
                         moveDirection = this.#DIRECTION.UP;
-                    } else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH
-                    )/*(disX > disY) && (lateEnemy.X >= currentTankX) && */ && this.#DIRECTION.DOWN != Bullet[1] && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17] && this.#DIRECTION.UP != Bullet[21] && this.#DIRECTION.RIGHT != Bullet[10] && this.#DIRECTION.RIGHT != Bullet[9]) {
-                        moveDirection = this.#DIRECTION.LEFT;
                     } else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.RIGHT, currentTankWH
-                    )/*(disX > disY) && (lateEnemy.X < currentTankX) &&*/ && this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23] && this.#DIRECTION.LEFT != Bullet[14] && this.#DIRECTION.LEFT != Bullet[14]) {
+                    ) && (disX > disY) && (lateEnemy.X < currentTankX) && this.#DIRECTION.DOWN != Bullet[3] && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.UP != Bullet[23] && this.#DIRECTION.LEFT != Bullet[14] && this.#DIRECTION.LEFT != Bullet[14]) {
                         moveDirection = this.#DIRECTION.RIGHT
+                    } else if (!this.#isNearBoundary(currentTankX, currentTankY, this.#DIRECTION.LEFT, currentTankWH
+                    ) && (disX > disY) && (lateEnemy.X >= currentTankX) && this.#DIRECTION.DOWN != Bullet[1] && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17] && this.#DIRECTION.UP != Bullet[21] && this.#DIRECTION.RIGHT != Bullet[10] && this.#DIRECTION.RIGHT != Bullet[9]) {
+                        moveDirection = this.#DIRECTION.LEFT;
                     } else if ((currentTankX + currentTankWH) > screenX) {
                         moveDirection = this.#DIRECTION.LEFT
                     } else if ((currentTankY + currentTankWH) > screenY) {
@@ -175,14 +175,14 @@ window.playerA = new (class PlayerControl {
                 moveDirection = this.priority
             }
         } else if (escapenum >= 6) {     //超过4个敌方坦克小于安全距离 逃跑策略
-            if (cy > currentTankY && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT != Bullet[19]) {
-                moveDirection = this.#DIRECTION.DOWN;
-            } else if (cy > currentTankY && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7]) {
-                moveDirection = this.#DIRECTION.UP;
-            } else if (cx < currentTankX && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17]) {
-                moveDirection = this.#DIRECTION.LEFT;
-            } else if (cx > currentTankX && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19]) {
-                moveDirection = this.#DIRECTION.RIGHT
+            if (cy > currentTankY  && this.#DIRECTION.RIGHT != Bullet[17] && this.#DIRECTION.STOP == Bullet[18] && this.#DIRECTION.LEFT  != Bullet[19] && this.#DIRECTION.UP != Bullet[22]) {
+              moveDirection = this.#DIRECTION.DOWN;
+            } else if(cy > currentTankY && this.#DIRECTION.RIGHT != Bullet[5] && this.#DIRECTION.STOP == Bullet[6] && this.#DIRECTION.LEFT != Bullet[7] && this.#DIRECTION.DOWN != Bullet[2]) {
+              moveDirection = this.#DIRECTION.UP;
+            } else if (cx > currentTankX && this.#DIRECTION.DOWN != Bullet[7] && this.#DIRECTION.STOP == Bullet[13] && this.#DIRECTION.UP != Bullet[19] && this.#DIRECTION.LEFT != Bullet[14]){
+              moveDirection = this.#DIRECTION.RIGHT
+            } else if (cx < currentTankX && this.#DIRECTION.DOWN != Bullet[5] && this.#DIRECTION.STOP == Bullet[11] && this.#DIRECTION.UP != Bullet[17] && this.#DIRECTION.RIGHT != Bullet[10]){
+              moveDirection = this.#DIRECTION.LEFT;
             }
             console.log("中央逃逸", moveDirection)
         }
