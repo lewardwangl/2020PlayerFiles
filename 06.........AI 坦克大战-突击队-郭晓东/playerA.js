@@ -18,6 +18,7 @@ window.playerA = new (class PlayerControl {
     this.svEnemyTanks;//所有敌方坦克
     this.svEnemyBullets;// 所有的敌方子弹实例数组
     this.wallArray;
+    this.wallExtandArray = [];
     this.svTankSimulateBulletArray;//模拟子弹.不会推演5步，只会构建危险区
     this.svMyBullets;//所有我方子弹
     this.opponentBullets;//对手的子弹
@@ -58,6 +59,10 @@ window.playerA = new (class PlayerControl {
     this.ballance = false;//比分相同。
     this.sideAttackForLog = 0;
     this.svMyBulletsRectArray;//我方子弹构成的必死区间。可提早结束目标坦克的锁定。每一个坦克有三个rect。三个子弹也能构成一个大的必死区间
+    this.lockedRectArray;//是否在自己击中范围内。
+    this.centerSafeRect = 0;
+    this.swordDir = 4;
+    this.swordSideDir = 4;
   }
 
     // 方向的别名
@@ -88,6 +93,9 @@ window.playerA = new (class PlayerControl {
   }
 
   land() {
+    this.wallArray = this.SVCreateWallRect(ametal);
+    this.getWallExtandArray();
+    this.gameLevel = this.wallArray.length?3:2;
     if (this.shouldFire) {
       this.SVFire();
     }
@@ -124,20 +132,25 @@ window.playerA = new (class PlayerControl {
       this.tankTotalCount = aTankCount.length;
     };
 
-
+    
     this.svEnemyTanks = [];
     if (this.gameLevel ==3) {
-      this.svEnemyTanks = this.svEnemyTanks.concat(aTankCount).concat([this.svOtherPlayerTank]);
+      this.svEnemyTanks = this.svEnemyTanks.concat(aTankCount);
+      if (!this.otherDie) {
+        this.svEnemyTanks.push(this.svOtherPlayerTank)  
+      };
+      
     }else{
       this.svEnemyTanks = aTankCount;//所有敌方坦克
     }
 
     
-    this.wallArray = this.SVCreateWallRect(ametal);
-    this.gameLevel = this.wallArray.length?3:2;
+    
+    
     this.fallBehind = false;
     this.ahead = false;
     this.ballance = false;
+    this.svCenterSafeArea();
     /*
       1. 比分高于总分1/2 
       2. 总分已经落后,无法追评比分。则直接攻击对方坦克
@@ -188,6 +201,7 @@ window.playerA = new (class PlayerControl {
     this.hasFallInDanger = false;
     this.accurateGap = tankWidth/5;
     this.wallJudgement = [[-1,0],[0,1],[1,0],[0,-1]];
+    this.lockedRectArray = [];
     /*
       实现躲避逻辑
       1. 构建自己坦克行动矩阵（5步之内）
@@ -220,10 +234,13 @@ window.playerA = new (class PlayerControl {
     this.SVCreateMatrixArray(centerRect);
 
     //更新子弹落点
-    this.SVUpdateMatrixArray();    
+    this.SVUpdateMatrixArray(true,this.svEnemyBullets,centerRect);
 
     //更新敌方坦克落点
-    this.SVUpdateMatrixArrayWithTank();
+    if(!(this.ahead || this.ballance)){
+      this.SVUpdateMatrixArrayWithTank();
+    }
+    
 
     //发现死锁，避开
     this.SVFindDeadAreas()
@@ -266,6 +283,10 @@ window.playerA = new (class PlayerControl {
 
   SVEscape(){
     var canvas = document.getElementById('canvas');
+    var disBetweenMyOhter = 0;
+    if(this.gameLevel == 3){
+      disBetweenMyOhter = PlayerControl.SVGetRectDistance(this.svMyTank,this.svOtherPlayerTank);
+    }
     // 递归得到所有路径
     let paths = this.SVFindPaths(this.SV_DEPTH)
     
@@ -308,10 +329,10 @@ window.playerA = new (class PlayerControl {
     let mixArray = innerArray ? innerArray : safePoints;
     let iDirArray = [];
     if (this.ballance) {
-      this.accurateGap = PlayerControl.SV_TANK_WH/2+PlayerControl.SV_BULLET_WH/2;
+      this.accurateGap = 30 ;//PlayerControl.SV_TANK_WH/2+PlayerControl.SV_BULLET_WH/2;
     };
     if (this.ahead) {
-      this.accurateGap = PlayerControl.SV_TANK_WH/2+PlayerControl.SV_BULLET_WH/2;
+      this.accurateGap = 30 ;//layerControl.SV_TANK_WH/2;+PlayerControl.SV_BULLET_WH/2;
       let farestRect = this.SVAvoidTheOtherTank();
       iDirArray = this.SVAttackTargetTank(farestRect,false,Math.ceil(this.SV_TANK_SPEED/2));
       
@@ -332,7 +353,7 @@ window.playerA = new (class PlayerControl {
     //优化点15：如果最后一张图上中心点，或者轴上在危险区，就不寻找坦克了。不然容易引起摆动。
     let indexMatrix = this.SV_DEPTH
     var lastMatrix = this.svMatrixArray[indexMatrix-1];
-    var selfInDangerous = this.SVSelfInDangerArea();
+    var selfInDangerous = this.SVOnlySelfInDangerArea();
     var targetTankDis = PlayerControl.SVGetTankDistance(this.svMyTank, this.svTargetTank);
     if(!selfInDangerous){
        directionObject1 = this.SVFindSafeDirectionWithAttackDir(mixArray,safePathMap,iDirArray[0],true);
@@ -364,7 +385,13 @@ window.playerA = new (class PlayerControl {
 
 
     if(!finalTargetSafePoint){
-      console.log("找不到路径")
+      
+      var deadDir = this.svOtherMustDieAndFire();
+      console.log("找不到路径 + 必死方向 " + deadDir);
+      //一般我在对方必死区间，对方也在我的必死区间。
+      if (this.ahead || this.ballance) {
+        return 1;
+      };
       return 0;
     }
     let logString = "选取了安全点 " +"("+finalTargetSafePoint.X+"行,"+finalTargetSafePoint.Y+"列)"
@@ -394,15 +421,16 @@ window.playerA = new (class PlayerControl {
     logString = "首选方向 " + this.SVGetDirectionStr(finalDirection)
     console.log("%c"+logString,'color: #FD7b4A;font-size: 14px;font-weight: bold;text-decoration: underline;');
 
-    this.SVMove(finalDirection)
+    
     //如果坦克靠边，向垂直发射子弹情况。就可以宽容一些
     if (this.SVMytankAtEdge((finalDirection+1)%4,this.SV_TANK_SPEED) ||this.SVMytankAtEdge((finalDirection+3)%4,PlayerControl.SV_TANK_WH/2)) {
         this.accurateGap = PlayerControl.SV_TANK_WH/2+PlayerControl.SV_BULLET_WH;
     }
+    this.SVAttackingOpponent();
 
     var target = this.SVFireTarget(finalDirection,this.accurateGap)
-    var sideGunti = !(this.ahead || this.SVAttackingOpponent() || this.ballance)?this.accurateGap:PlayerControl.SV_TANK_WH/2;
-    var sideTarget = this.SVSideFire(target.near,sideGunti)//只是看一下有没有在射击范围内的坦克。
+    // var sideGunti = !(this.ahead || this.SVAttackingOpponent() || this.ballance)?this.accurateGap:PlayerControl.SV_TANK_WH/2;
+    var sideTarget = this.SVSideFire(target.near,this.accurateGap*2)//只是看一下有没有在射击范围内的坦克。
     if (this.fallBehind) {
       sideTarget = [];//终极模式，不能用鸟枪法
     };
@@ -411,32 +439,321 @@ window.playerA = new (class PlayerControl {
     var dis = PlayerControl.SVGetTankDistance(this.svMyTank, this.svTargetTank);
     let bulletGap = (dis > canvas.width/3 || this.SVAttackingOpponent()) ? tankWidth : PlayerControl.SV_BULLET_WH;
     if (bulletGap == PlayerControl.SV_BULLET_WH && sideTarget.length >= 2) {//坦克比较密集。可多发射炮弹
-        bulletGap = 1;
+        bulletGap = 10;
     };
-    if ((target.direction != -1 && 
-        (this.SVShouldFireToDirction(finalDirection,PlayerControl.SV_TANK_WH)) ||(this.SVShouldFireToDirction(finalDirection,bulletGap) && sideTarget.length > 1))
-        ) {
-      //如果下一步要行进的方向上有可以击中的目标  就开火
-      this.shouldFire = true;
-    } else {
-      //如果下一步要行进的方向上没有可以开火的目标，但是当前屏幕上还没有这个方向的子弹，依然开火
-      if (!this.SVExistBulletInDirection(finalDirection) 
-        && finalDirection!=this.DIRECTION.DOWN 
-        && !this.SVMytankAtEdge(finalDirection,80)
-        && !this.SVSideAttackCollideWall(finalDirection)
-        && !this.ahead
-        && !this.ballance
-        ){
-        this.shouldFire = true;
-      } else {
-        this.shouldFire = false;
-      }
+
+    this.svGetLockedRect(finalDirection);
+    
+
+    
+    var sword = false;
+    if ((this.ballance && disBetweenMyOhter >= 200 && disBetweenMyOhter < 500  && !selfInDangerous  || this.swordDir < 4
+      )&& this.svMyBullets.length < 4
+      ) {
+      var first = false;
+      this.shouldFire = false;
+      if (this.swordDir == 4) {
+        first = true;
+        let aixs = Math.abs(this.svMyTank.X - this.svOtherPlayerTank.X) > Math.abs(this.svMyTank.Y - this.svOtherPlayerTank.Y)?'X':'Y';
+        let otherAixs = (aixs == 'X')?'Y':'X';
+        
+        if (aixs == 'X') {
+          if (this.svMyTank[otherAixs] < this.svOtherPlayerTank[otherAixs]) {
+            this.swordDir = this.DIRECTION.DOWN;
+          }else{
+            this.swordDir = this.DIRECTION.UP;
+          }
+          if (this.svMyTank[aixs] < this.svOtherPlayerTank[aixs]){
+            this.swordSideDir = this.DIRECTION.RIGHT;
+          }else{
+            this.swordSideDir = this.DIRECTION.LEFT;
+          }
+        }else{
+            if (this.svMyTank[otherAixs] < this.svOtherPlayerTank[otherAixs]) {
+              this.swordDir = this.DIRECTION.RIGHT;
+            }else{
+              this.swordDir = this.DIRECTION.LEFT;
+            }
+            if (this.svMyTank[aixs] < this.svOtherPlayerTank[aixs]){
+              this.swordSideDir = this.DIRECTION.DOWN;
+            }else{
+              this.swordSideDir = this.DIRECTION.UP;
+            }
+        }  
+      };
       
+
+      //大刀模式，本身也有钓鱼模式
+      
+      //需要判断这个方向，是否安全
+        var directionObject = this.SVFindSafeDirectionWithAttackDir(mixArray,safePathMap,this.swordDir,true);
+        //此方向比较安全
+        if (directionObject.attackDirection == this.swordDir) {
+          sword = true; 
+        }else{
+          console.log("虽然找到了，必杀路径，但是路径上有子弹影响")
+        }
+      
+      if (sword) {
+        if (this.loopTime %2 == 0 || first) {//第一次触发
+          this.shouldFire = this.SVShouldFireToDirctionSword(this.swordSideDir,30);//
+          if (this.shouldFire) {
+            finalDirection = this.swordSideDir;  
+          }else{
+            finalDirection = this.swordDir;  
+          }
+        }else{
+          finalDirection = this.swordDir;
+        } 
+      }else{
+        this.swordDir = 4;
+      }
     }
+    if(!sword) {
+      this.swordDir = 4;
+      var closeFire = this.svCheckOtherCloseFire();//检查是否有重叠
+      var closeStop = this.svCheckOtherCloseStop();
+      // if (closeFire) {
+      //   var target = this.SVFireTarget(finalDirection,30-1)
+      //   this.shouldFire = true;
+      //   finalDirection = this.DIRECTION.STOP;
+      // }else 
+      if (closeStop) {
+        this.shouldFire = false;
+        finalDirection = this.DIRECTION.STOP;
+      // }
+      // else if (this.svOpponentLocked()) {
+      //   this.shouldFire = true;
+      }else if ((target.direction != -1 && 
+          (this.SVShouldFireToDirction(finalDirection,PlayerControl.SV_TANK_WH)) ||(this.SVShouldFireToDirction(finalDirection,bulletGap) && sideTarget.length > 1))
+          ) {
+        //如果下一步要行进的方向上有可以击中的目标  就开火
+        if ((this.ballance)&&disBetweenMyOhter >= 200) {
+          this.shouldFire = false;
+        }else{
+          this.shouldFire = true;  
+        }
+        
+      } else {
+        //如果下一步要行进的方向上没有可以开火的目标，但是当前屏幕上还没有这个方向的子弹，依然开火
+        if (!this.SVExistBulletInDirection(finalDirection) 
+          && finalDirection!=this.DIRECTION.DOWN 
+          && !this.SVMytankAtEdge(finalDirection,80)
+          && !this.SVSideAttackCollideWall(finalDirection)
+          && !this.ahead
+          && !this.ballance
+          ){
+          this.shouldFire = true;
+        } else {
+          this.shouldFire = false;
+        }
+        
+      }  
+    }
+    var deadDir = -1;
+    //如果必死，基本结束战斗
+    if (this.ahead || this.ballance || this.fallBehind || this.SVAttackingOpponent()) {
+      //看看地方是否在我的必杀区间
+       deadDir = this.svOtherMustDieAndFire();
+    };
+    //由于svCheckOtherDanger和otherPlayerCollideWallExtand都会对finalDirection区反。故搞一个原始值。要不然两次区反又回来了。
+    var oriFinalDirection = finalDirection;
+    //正常走下面
+    if (deadDir < 0 ) { 
+      var otherDanger = this.svCheckOtherDanger();
+      console.log("svCheckOtherDanger ="+otherDanger+'this.shouldFire=' + this.shouldFire)
+      //在敌人射击范围内，又没有子弹了。跑！
+      if (otherDanger && 1) {//!this.shouldFire
+       
+        var tw = PlayerControl.SV_TANK_WH;
+        //finalDirection 需要更改。
+        var myCenterX = this.svMyTank.X + tw/2;
+        var myCenterY = this.svMyTank.Y + tw/2;
+
+        var otherCenterX = this.svOtherPlayerTank.X + tw/2;
+        var otherCenterY = this.svOtherPlayerTank.Y + tw/2;
+        var dangerDir = -1;
+        //上下 近
+        if (Math.abs(myCenterX - otherCenterX) < Math.abs(myCenterY - otherCenterY)) {
+          if (myCenterX < otherCenterX) {
+            if (myCenterY > otherCenterY && this.svOtherPlayerTank.direction == this.DIRECTION.DOWN || 
+              myCenterY < otherCenterY && this.svOtherPlayerTank.direction == this.DIRECTION.UP) {
+              dangerDir = this.DIRECTION.RIGHT;  
+            }
+            
+          }else if(myCenterY > otherCenterY && this.svOtherPlayerTank.direction == this.DIRECTION.DOWN || 
+              myCenterY < otherCenterY && this.svOtherPlayerTank.direction == this.DIRECTION.UP){
+            dangerDir = this.DIRECTION.LEFT;
+          }
+        }else{
+          if (myCenterY < otherCenterY) {
+            if (myCenterX > otherCenterX && this.svOtherPlayerTank.direction == this.DIRECTION.RIGHT || 
+              myCenterX < otherCenterX && this.svOtherPlayerTank.direction == this.DIRECTION.LEFT) {
+              dangerDir = this.DIRECTION.DOWN;
+            }
+            
+          }else if (myCenterX > otherCenterX && this.svOtherPlayerTank.direction == this.DIRECTION.RIGHT || 
+              myCenterX < otherCenterX && this.svOtherPlayerTank.direction == this.DIRECTION.LEFT){
+            dangerDir = this.DIRECTION.UP;
+          }
+        }
+        //更详细的区分敌方炮口
+        if (dangerDir != -1) {
+          finalDirection = (dangerDir+2)%4;
+          this.shouldFire = false;//劈开对方炮口，自己刚才的不用发射了；
+        };
+      };
+
+      // var closeWall = this.otherPlayerCollideWallExtand(this.svTargetTank);
+      // if((this.ahead || this.ballance) && closeWall && !this.hasEscapeBullet){
+      //   //解决对方在柱子边，我过去追反而被击杀
+      //   var rev = (oriFinalDirection+2)%4;
+      //   var directionObject = this.SVFindSafeDirectionWithAttackDir(mixArray,safePathMap,rev,true);
+      //   if (directionObject.attackDirection != this.DIRECTION.STOP) {
+      //     finalDirection = directionObject.attackDirection;
+      //   };
+      // }
+      this.SVMove(finalDirection)
+    };
+
+
+    
+    console.log("shouldFire = "+this.shouldFire);
       //打印日志使用，不要打开
       // this.shouldFire = false;
-
+    
     return finalTargetSafePoint;
+  }
+  //模拟我方坦克四个边，四个子弹。然后跟对方坦克去判断对方是否在必死区间。
+  svOtherMustDieAndFire(){
+    var deadDir = -1;//是方向
+    var simulateArray = this.svGetMyTankSimulateBulletArray();
+      for (var i = 0; i < simulateArray.length; i++) {
+         var result= this.svOtherEscape([simulateArray[i]]);
+         if (result == 0) {
+          deadDir = i
+          break;
+         };
+      };
+      // var firstMatrix = this.svMatrixArray[0];
+
+      if (deadDir >= 0) {
+        this.shouldFire = true;
+        //finalDirection 需要更改。
+        this.SVMove(deadDir)
+        this.SVFire();
+        //必杀区间.之前的开火，移动方向作废。使用心得开火方向和移动
+        console.log('敌人在必死区间，本次loop结束');
+      };
+      return deadDir; 
+  }
+
+  //将对方作为自己，判断是否有路可走。无路可走立刻攻打他。
+  //这个方法会复用自己的矩阵数组。需要最后使用。
+  svOtherEscape(array){
+    var centerRect = this.SVGetStepRect(this.svOtherPlayerTank.X,this.svOtherPlayerTank.Y,PlayerControl.SV_TANK_WH,PlayerControl.SV_TANK_WH);
+    this.SVCreateMatrixArray(centerRect);
+    //模拟我的坦克四个方向的子弹
+    //更新子弹落点
+    this.SVUpdateMatrixArray(false,array,centerRect);
+    this.SVLogMatrixHor();
+    let paths = this.SVFindPaths(this.SV_DEPTH)
+    if (paths) {
+      return paths.length;  
+    };
+    return 0;
+  }
+
+  svCheckOtherCloseFire(){
+    if (this.svOtherPlayerTank) {
+      if( Math.abs(this.svMyTank.Y - this.svOtherPlayerTank.Y)<30 && Math.abs(this.svMyTank.X - this.svOtherPlayerTank.X)<30){
+        return true;
+      }
+    }
+    return false;
+  }
+
+    svCheckOtherDanger(){
+    if (this.svOtherPlayerTank) {
+      if( Math.abs(this.svMyTank.Y - this.svOtherPlayerTank.Y)<37 && Math.abs(this.svMyTank.X - this.svOtherPlayerTank.X) < PlayerControl.SV_TANK_WH +27 ||
+        Math.abs(this.svMyTank.X - this.svOtherPlayerTank.X)<37 && Math.abs(this.svMyTank.Y - this.svOtherPlayerTank.Y) < PlayerControl.SV_TANK_WH +27){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  svCheckOtherCloseStop(){
+    if (this.svOtherPlayerTank) {
+      if( Math.abs(this.svMyTank.Y - this.svOtherPlayerTank.Y) == 30 && Math.abs(this.svMyTank.X - this.svOtherPlayerTank.X) == 30){
+       return true;
+      }
+  }
+    return false;
+  }
+
+  svGetLockedRect(finalDirection){
+    if (!(this.ahead || this.ballance)) {
+      return ;
+    }
+    var myTankRect = this.SVGetStepRect(this.svMyTank.X,this.svMyTank.Y,PlayerControl.SV_TANK_WH,PlayerControl.SV_TANK_WH);
+    let tw = PlayerControl.SV_TANK_WH;
+    let bw = PlayerControl.SV_BULLET_WH;
+    let ts = this.SV_TANK_SPEED;
+    let bs = this.SV_BULLET_SPEED
+    if (finalDirection == this.DIRECTION.UP || finalDirection == this.DIRECTION.DOWN) {
+          var h = bw  + bw + 30 + tw/2;
+          var l = myTankRect.X + (tw-bw)/2;
+          var topY = finalDirection == this.DIRECTION.UP ? myTankRect.TOP -h:myTankRect.BOTTOM
+          var topY2 = finalDirection == this.DIRECTION.UP ? myTankRect.TOP -h +bs :myTankRect.BOTTOM
+          var topY3 = finalDirection == this.DIRECTION.UP ? myTankRect.TOP -h +bs +bs :myTankRect.BOTTOM
+          var rect = this.SVGetStepRect(l,topY,bw,h)
+          this.lockedRectArray.push(rect);
+          rect = this.SVGetStepRect(l - ts,topY2,bw,h - bs)
+          this.lockedRectArray.push(rect);
+          rect = this.SVGetStepRect(l - ts*2,topY3,bw,h - bs*2)
+          this.lockedRectArray.push(rect);
+
+          rect = this.SVGetStepRect(l + bw,topY2,bw,h - bs)
+          this.lockedRectArray.push(rect);
+          rect = this.SVGetStepRect(l + bw + ts,topY3,bw,h - bs*2)
+          this.lockedRectArray.push(rect);
+
+
+    }else if (finalDirection == this.DIRECTION.RIGHT || finalDirection == this.DIRECTION.LEFT) {
+          var w = bw  + bw + 30 + tw/2;
+          var t = myTankRect.Y + (tw-bw)/2;
+          var leftX = finalDirection == this.DIRECTION.LEFT?myTankRect.LEFT - w:myTankRect.RIGHT
+          var leftX2 = finalDirection == this.DIRECTION.LEFT?myTankRect.LEFT - w + bs:myTankRect.RIGHT
+          var leftX3 = finalDirection == this.DIRECTION.LEFT?myTankRect.LEFT - w + bs + bs:myTankRect.RIGHT
+          var rect = this.SVGetStepRect(leftX,t, w,bw);
+          this.lockedRectArray.push(rect);
+          rect = this.SVGetStepRect(leftX2,t-ts, w-bs,bw);
+          this.lockedRectArray.push(rect);
+          rect = this.SVGetStepRect(leftX3,t-ts*2, w-bs*2,bw);
+          this.lockedRectArray.push(rect);
+
+          rect = this.SVGetStepRect(leftX2,t + bs, w-bs,bw);
+          this.lockedRectArray.push(rect);
+          rect = this.SVGetStepRect(leftX3,t + bs + ts, w-bs*2,bw);
+          this.lockedRectArray.push(rect);
+    };
+  }
+
+  svOpponentLocked(){
+    if (this.svOtherPlayerTank) {
+      let tw = PlayerControl.SV_TANK_WH;
+      var opponentCenter = this.SVGetStepRect(this.svOtherPlayerTank.X + tw/2,this.svOtherPlayerTank.Y + tw/2,1,1);
+      for (var i = 0; i < this.lockedRectArray.length; i++) {
+        var rect =this.lockedRectArray[i]
+        let result = PlayerControl.SVCheckCollide(opponentCenter,rect);
+        if (result) {
+          return true;
+        };
+      };
+
+    }
+    return false;
   }
 
   SVFindSafeDirectionWithAttackDir(mixArray,safePathMap,iDir,isFirstDir){
@@ -479,7 +796,7 @@ window.playerA = new (class PlayerControl {
     var accurateRect = 0;
     let bWidth = PlayerControl.SV_BULLET_WH;
     let tWidth = PlayerControl.SV_TANK_WH
-    let tStep = this.SV_TANK_SPEED;
+    let tStep = 10;
     switch(direction){
       case this.DIRECTION.LEFT:
         accurateRect = this.SVGetStepRect(0,myTankRect.Y+tWidth/2 - bWidth/2,myTankRect.LEFT,bWidth);
@@ -530,8 +847,12 @@ window.playerA = new (class PlayerControl {
       };
     };
     //障碍物模式仍使用短距离 
-    this.svCurrentTankDistance = (edgeResult || metalResult || this.ahead)? this.svOtherTankEnoughDistance:this.svOtherTankDistance;
-    
+    //metalResult ||
+    this.svCurrentTankDistance = (edgeResult ||  this.ahead)? this.svOtherTankEnoughDistance:this.svOtherTankDistance;
+    //没有坦克的时候，或者领先。
+    if ((this.ahead || this.ballance) && this.svMyBullets.length < 5 || aTankCount.length == 0 || this.SVAttackingOpponent()) {
+      this.svCurrentTankDistance = 0;
+    };
     if (this.SVAttackingOpponent()) {
       var steps = this.SVOpponentVoidBullet();
       if (steps>0) {
@@ -732,17 +1053,20 @@ window.playerA = new (class PlayerControl {
   * 
   */
 
-  SVUpdateMatrixArray(){
+  SVUpdateMatrixArray(isSelf,enemyBullets,centerRect){
     for (var i = 0; i < this.svMatrixArray.length; i++) {
       var matrix = this.svMatrixArray[i];
-      this.SVUpdateMatrix(matrix,i+1);
+      this.SVUpdateMatrix(matrix,enemyBullets,centerRect,i+1);
     };
 
     let lastMatrix = this.svMatrixArray[this.svMatrixArray.length-1];
     let iWidth = this.SV_DEPTH;
 
     //确定是否收到攻击
-    this.SVSetInBulletAttack(lastMatrix,this.SV_DEPTH);
+    if (isSelf) {
+      this.SVSetInBulletAttack(lastMatrix,this.SV_DEPTH);  
+    };
+    
 
     //优化点5：最后一张图上。如果中心点四周有被子弹侵占，那么子弹相同方向就不能走了  
     var tmpMapWithBullet = new Map();
@@ -1103,14 +1427,14 @@ window.playerA = new (class PlayerControl {
   * 根据我方坦克坐标，遍历所有子弹，更新矩阵 0，1 值。
   * 参数：steps 第几步
   */
-  SVUpdateMatrix(matrix,steps){
+  SVUpdateMatrix(matrix,enemyBullets,centerRect,steps){
 
-    if(this.svEnemyBullets.length == 0){
+    if(enemyBullets.length == 0){
       return;
     }
-    var myTankRect = this.SVGetStepRect(this.svMyTank.X,this.svMyTank.Y,PlayerControl.SV_TANK_WH,PlayerControl.SV_TANK_WH);
-    for (var i = 0; i < this.svEnemyBullets.length; i++) {
-        var bullet = this.svEnemyBullets[i];
+    var myTankRect = centerRect;
+    for (var i = 0; i < enemyBullets.length; i++) {
+        var bullet = enemyBullets[i];
         //由于子弹会在loop函数最后移动（即，SVUpdateMatrixArray之后移动），所以，坦克要根据当前子弹的位置进行移动
         //但是对手的子弹确实先移动，再判断碰撞
         var actualStep = steps-1
@@ -1384,18 +1708,8 @@ SVUpdateMatrixWithTank(matrix,steps){
       let tmp = this.svAllDirectionBullets[i];
       this.SVFindDeadAreasSameDirectoin(tmp)
     };
-    //优化点16： 左上角，右上角属于危险区
-    // if(this.svEnemyTanks.length > 5){ 
-    //   var screenX = window.innerWidth  
-    //   var heightMargin = PlayerControl.SV_TANK_WH*2;
-    //   var widthMargin = PlayerControl.SV_TANK_WH*4;
-    //   var leftTop = this.SVGetStepRect(0,0,widthMargin,heightMargin)
-    //   var rightTop = this.SVGetStepRect(screenX-widthMargin,0,widthMargin,heightMargin)
-    //   this.svDeadAreas.push(leftTop);
-    //   this.svDeadAreas.push(rightTop);  
-    // }
-
-    if(this.gameLevel < 3 || this.ahead || this.SVAttackingOpponent()){ 
+    //|| this.ahead || this.SVAttackingOpponent()
+    if(this.gameLevel < 3 ){ 
       var banner = this.ahead || this.SVAttackingOpponent();
       var heightMargin = PlayerControl.SV_TANK_WH;
       var heightBig = screenY
@@ -1470,7 +1784,8 @@ SVUpdateMatrixWithTank(matrix,steps){
           let bigY = b.Y > allB.Y ? b : allB;
 
           var judgement = (edge|| edgeB)//其中一个挨着边界
-          //像前进方向移动20步
+          var shrinkGap = 20;
+          //1. 两个子弹靠近边界情况 像前进方向移动20步
           switch(b.direction){
             case this.DIRECTION.UP:
               
@@ -1478,11 +1793,12 @@ SVUpdateMatrixWithTank(matrix,steps){
               if (judgement) {
                  if(leftX > screenX/2){
                   leftX -= bulletWidth/2;
-                  rect = this.SVGetStepRect(leftX,topY-steps,margin,steps)
+                  leftX += shrinkGap;
+                  rect = this.SVGetStepRect(leftX,topY - steps,margin - shrinkGap,steps)
                   rectLog = this.SVGetStepRect(leftX,topY,width+margin,height)
                 }else{
                   leftX += bulletWidth/2;
-                  rect = this.SVGetStepRect(leftX-margin,topY-steps,width+margin,steps)
+                  rect = this.SVGetStepRect(leftX-margin,topY-steps,width+margin - shrinkGap,steps)
                   rectLog = this.SVGetStepRect(leftX-margin,topY,width+margin,height)
                 }
               }
@@ -1493,11 +1809,11 @@ SVUpdateMatrixWithTank(matrix,steps){
                 if (judgement) {
                   if(topY > screenY/2){
                     topY -= bulletWidth/2;
-                    rect = this.SVGetStepRect(leftX+width,topY,steps,height +margin)
+                    rect = this.SVGetStepRect(leftX+width,topY+shrinkGap,steps,height +margin - shrinkGap)
                     rectLog = this.SVGetStepRect(leftX,topY,width,height +margin)
                   }else{
                     topY += bulletWidth/2;
-                    rect = this.SVGetStepRect(leftX+width,topY-margin,steps,height+margin)
+                    rect = this.SVGetStepRect(leftX+width,topY-margin,steps,height+margin - shrinkGap)
                     rectLog = this.SVGetStepRect(leftX,topY-margin,width,height+margin)
                 }
               }
@@ -1509,11 +1825,11 @@ SVUpdateMatrixWithTank(matrix,steps){
                 if (judgement) {
                   if(leftX > screenX/2){
                     leftX -= bulletWidth/2;
-                    rect = this.SVGetStepRect(leftX,topY+height,width+margin,steps)
+                    rect = this.SVGetStepRect(leftX - shrinkGap,topY+height,width+margin - shrinkGap,steps)
                     rectLog = this.SVGetStepRect(leftX,topY,width+margin,height)
                   }else{
                     leftX += bulletWidth/2;
-                    rect = this.SVGetStepRect(leftX-margin,topY+height,width+margin,steps)
+                    rect = this.SVGetStepRect(leftX-margin,topY+height,width+margin - shrinkGap,steps)
                     rectLog = this.SVGetStepRect(leftX-margin,topY,width+margin,height)
                   }
               }
@@ -1524,11 +1840,11 @@ SVUpdateMatrixWithTank(matrix,steps){
                 if (judgement) {
                   if(topY > screenY/2){
                     topY -= bulletWidth/2;
-                    rect = this.SVGetStepRect(leftX-steps,topY,steps,height+margin)
+                    rect = this.SVGetStepRect(leftX-steps,topY + shrinkGap,steps,height+margin - shrinkGap)
                     rectLog = this.SVGetStepRect(leftX,topY,width,height+margin)
                   }else{
                     topY += bulletWidth/2;
-                    rect = this.SVGetStepRect(leftX-steps,topY - margin,steps,height + margin)
+                    rect = this.SVGetStepRect(leftX-steps,topY - margin,steps,height + margin - shrinkGap)
                     rectLog = this.SVGetStepRect(leftX,topY - margin,width,height + margin)
                   }
               }
@@ -1585,7 +1901,8 @@ SVUpdateMatrixWithTank(matrix,steps){
                 leftX -= bulletWidth/2
                 topY += bulletWidth/2
                 width +=  bulletWidth
-                rect = this.SVGetStepRect(leftX,topY-steps,width,steps)
+                var shrink = (width - Math.min(width,PlayerControl.SV_BULLET_WH))/2;
+                rect = this.SVGetStepRect(leftX + shrink,topY - steps,width - shrink*2,steps);
                 rectLog = this.SVGetStepRect(leftX,topY,width,height)
             break;
 
@@ -1593,15 +1910,17 @@ SVUpdateMatrixWithTank(matrix,steps){
                 leftX -= bulletWidth/2
                 topY -= bulletWidth/2
                 height += bulletWidth;
-                rect = this.SVGetStepRect(leftX+width,topY,steps,height)
-                rectLog = this.SVGetStepRect(leftX,topY,width,height)
+                var shrink = (height - Math.min(height,PlayerControl.SV_BULLET_WH))/2;
+                rect = this.SVGetStepRect(leftX + width,topY + shrink,steps,height - shrink*2);
+                rectLog = this.SVGetStepRect(leftX,topY,width,height);
             break;
 
             case this.DIRECTION.DOWN:
                 leftX -= bulletWidth/2
                 topY -= bulletWidth/2
                 width +=  bulletWidth
-                rect = this.SVGetStepRect(leftX,topY+height,width,steps)
+                var shrink = (width - Math.min(width,PlayerControl.SV_BULLET_WH))/2;
+                rect = this.SVGetStepRect(leftX + shrink,topY + height,width - shrink*2,steps)
                 rectLog = this.SVGetStepRect(leftX,topY,width,height)
             break;
 
@@ -1609,7 +1928,8 @@ SVUpdateMatrixWithTank(matrix,steps){
                 leftX += bulletWidth/2
                 topY -= bulletWidth/2
                 height += bulletWidth;
-                rect = this.SVGetStepRect(leftX-steps,topY,steps,height)  
+                var shrink = (height - Math.min(height,PlayerControl.SV_BULLET_WH))/2;
+                rect = this.SVGetStepRect(leftX-steps,topY + shrink,steps,height - shrink*2)  
                 rectLog = this.SVGetStepRect(leftX,topY,width,height)  
               
             break;
@@ -1634,18 +1954,18 @@ SVUpdateMatrixWithTank(matrix,steps){
           var height = b.Y < screenY/2?b.Y:screenY-b.Y;
           height += halfBulletWidth;
           if(b.direction == this.DIRECTION.RIGHT ){
-            rect = this.SVGetStepRect(b.X - halfBulletWidth,topY,edgeStep,height)
+            rect = this.SVGetStepRect(b.X - halfBulletWidth,topY,edgeStep,height-20)
           }else if (b.direction == this.DIRECTION.LEFT) {
-            rect = this.SVGetStepRect(b.X-edgeStep + halfBulletWidth,topY,edgeStep,height)
+            rect = this.SVGetStepRect(b.X-edgeStep + halfBulletWidth,topY+20,edgeStep,height)
           };
         }else if ((b.X < maxEdgeGap && b.X > minEdgeGap) || (b.X > screenX - maxEdgeGap && b.X < screenX - minEdgeGap)) {
           var leftX = b.X < maxEdgeGap?0:(b.X - halfBulletWidth);
           var w = b.X < screenX/2?b.X:screenX-b.X ;
           w += halfBulletWidth;
           if(b.direction == this.DIRECTION.UP ){
-            rect = this.SVGetStepRect(leftX,b.Y - edgeStep + halfBulletWidth,w,edgeStep)
+            rect = this.SVGetStepRect(leftX+20,b.Y - edgeStep + halfBulletWidth,w-20,edgeStep)
           }else if (b.direction == this.DIRECTION.DOWN) {
-            rect = this.SVGetStepRect(leftX,b.Y - halfBulletWidth,w,edgeStep)
+            rect = this.SVGetStepRect(leftX+20,b.Y - halfBulletWidth,w-20,edgeStep)
           };
         }
         if (rect) {
@@ -1662,7 +1982,7 @@ SVUpdateMatrixWithTank(matrix,steps){
           var bTop = b.Y - halfBulletWidth;
           var bBottom = b.Y + halfBulletWidth;
           var extandWidth = 200;
-          var otherExtandWidth = PlayerControl.SV_TANK_WH;
+          var otherExtandWidth = -7;// PlayerControl.SV_TANK_WH;
           minEdgeGap = 0;//障碍物的时候设置为0
           maxEdgeGap = PlayerControl.SV_TANK_WH + halfBulletWidth + this.SV_TANK_SPEED;
           rect = 0
@@ -2024,6 +2344,7 @@ SVUpdateMatrixWithTank(matrix,steps){
   svGetTankSimulateBulletArray() {
     var tankBulletArray = [];//存储坦克模拟子弹们
     var allTanks = [];
+    var bt = PlayerControl.SV_BULLET_WH;
     if (this.gameLevel == 3) {
       allTanks = allTanks.concat(aTankCount).concat(this.svOtherPlayerTank);
     }else{
@@ -2032,28 +2353,59 @@ SVUpdateMatrixWithTank(matrix,steps){
 
     for(var i = 0; i < allTanks.length; i++){
       var tankTmp = allTanks[i];
-      var bulletTmp = aBulletCount[0];//获取一些子弹的属性，没有实际用处
-      if (!bulletTmp) {
+      if (tankTmp.time < 40 && tankTmp["id"] != 100 && tankTmp["id"] != 200) {
         continue;
       };
       var  tankBullet = 0;//var bullet = new Bullet(myTank['id'], speed, rank, direction, X, Y);
-      
+      var speed = 0;
       //up
-      tankBullet = new Bullet(tankTmp.id, 0, bulletTmp.rank, this.DIRECTION.UP, tankTmp.X + (tankWidth / 2), tankTmp.Y);
+      tankBullet = new Bullet(tankTmp.id, speed, 1, this.DIRECTION.UP, tankTmp.X + (tankWidth / 2), tankTmp.Y - bt/2);
       tankBulletArray.push(tankBullet)
 
       //down
-      tankBullet = new Bullet(tankTmp.id, 0, bulletTmp.rank, this.DIRECTION.DOWN,tankTmp.X + (tankWidth / 2),tankTmp.Y + tankWidth)
+      tankBullet = new Bullet(tankTmp.id, speed, 1, this.DIRECTION.DOWN,tankTmp.X + (tankWidth / 2),tankTmp.Y + tankWidth + bt/2)
       tankBulletArray.push(tankBullet)
 
       //left
-      tankBullet = new Bullet(tankTmp.id, 0, bulletTmp.rank, this.DIRECTION.LEFT,tankTmp.X,tankTmp.Y + (tankWidth / 2))
+      tankBullet = new Bullet(tankTmp.id, speed, 1, this.DIRECTION.LEFT,tankTmp.X - bt/2,tankTmp.Y + (tankWidth / 2))
       tankBulletArray.push(tankBullet)
 
       //right
-      tankBullet = new Bullet(tankTmp.id, 0, bulletTmp.rank, this.DIRECTION.RIGHT,tankTmp.X + tankWidth,tankTmp.Y + (tankWidth / 2))
+      tankBullet = new Bullet(tankTmp.id, speed, 1, this.DIRECTION.RIGHT,tankTmp.X + tankWidth + bt/2,tankTmp.Y + (tankWidth / 2))
       tankBulletArray.push(tankBullet)
     }
+    return tankBulletArray
+  }
+
+  svGetMyTankSimulateBulletArray() {
+    var tankBulletArray = [];//存储坦克模拟子弹们
+  
+    var tankTmp = this.svMyTank;
+    var  tankBullet = 0;//var bullet = new Bullet(myTank['id'], speed, rank, direction, X, Y);
+    var myDir = this.svMyTank.direction;
+    var bt = PlayerControl.SV_BULLET_WH;
+    var speed = 10;
+    //up
+    var name = this.svMyTank.direction == this.DIRECTION.UP ? tankTmp.id:1234;
+    tankBullet = new Bullet(name, speed, 1, this.DIRECTION.UP, tankTmp.X + (tankWidth / 2), tankTmp.Y - bt/2);
+    tankBulletArray.push(tankBullet)
+
+    //right
+    name = this.svMyTank.direction == this.DIRECTION.RIGHT ? tankTmp.id:1237;
+    tankBullet = new Bullet(name, speed, 1, this.DIRECTION.RIGHT,tankTmp.X + tankWidth + bt/2,tankTmp.Y + (tankWidth / 2))
+    tankBulletArray.push(tankBullet)
+
+    //down
+    name = this.svMyTank.direction == this.DIRECTION.DOWN ? tankTmp.id:1235;
+    tankBullet = new Bullet(name, speed, 1, this.DIRECTION.DOWN,tankTmp.X + (tankWidth / 2),tankTmp.Y + tankWidth + bt/2)
+    tankBulletArray.push(tankBullet)
+
+    //left
+    name = this.svMyTank.direction == this.DIRECTION.LEFT ? tankTmp.id:1236;
+    tankBullet = new Bullet(name, speed, 1, this.DIRECTION.LEFT,tankTmp.X - bt/2,tankTmp.Y + (tankWidth / 2))
+    tankBulletArray.push(tankBullet)
+
+    
     return tankBulletArray
   }
 
@@ -2270,6 +2622,7 @@ SVUpdateMatrixWithTank(matrix,steps){
   // 控制移动   举例子：  向左移动： this.SVMove(this.DIRECTION.LEFT)
   SVMove(direction) {
     if (typeof direction === undefined) return;
+    if (direction == this.DIRECTION.STOP) {return;};
     this.svMoveEv.keyCode = this.SVGetDirectionKeyCode(direction);
     document.onkeydown(this.svMoveEv);
   }
@@ -2514,7 +2867,7 @@ SVUpdateMatrixWithTank(matrix,steps){
       screenY = window.innerHeight-100
       //此处的边界权重判断是全局的，任何点都会计算边界的值。一般情况不要启用。要不然tank走不到边。
       // || this.ballance
-      if (this.hasBulletAttck || this.SVSelfInDangerArea()) {
+      if (this.hasBulletAttck || this.SVOnlySelfInDangerArea()) {
         var imaginaryTankRect = this.SVExtandTank(imaginaryTank);
         var minDistance = Math.min(Math.min(Math.min(imaginaryTankRect.TOP,imaginaryTankRect.LEFT),screenX - imaginaryTankRect.RIGHT ),screenY - imaginaryTankRect.BOTTOM);
         minDistance += PlayerControl.SV_TANK_WH*4;//有时候模拟的坦克，会突破边界变为负数。但是不会超过2个坦克的举例.避免除数为零
@@ -2703,7 +3056,11 @@ SVUpdateMatrixWithTank(matrix,steps){
       }else{
         var dir = (myY > targetY) ? this.DIRECTION.UP:this.DIRECTION.DOWN;
         var dis = PlayerControl.SVGetTankDistance(this.svMyTank, targetObject);
-        if (dis<=this.svCurrentTankDistance && isTank) {
+
+        if (dis <= PlayerControl.SV_TANK_WH) {
+          console.log('');
+        };
+        if (dis<=this.svCurrentTankDistance && isTank && dis <= PlayerControl.SV_TANK_WH) {//dis <= PlayerControl.SV_TANK_WH坦克已经重叠
             dir = (dir+2)%4;
         }
         return [dir,dir];
@@ -2730,7 +3087,7 @@ SVUpdateMatrixWithTank(matrix,steps){
       }else {
           var dir = (myX > targetX) ? this.DIRECTION.LEFT:this.DIRECTION.RIGHT;
           var dis = PlayerControl.SVGetTankDistance(this.svMyTank, targetObject);
-          if (dis<=this.svCurrentTankDistance && isTank) {
+          if (dis<=this.svCurrentTankDistance && isTank && dis <= PlayerControl.SV_TANK_WH) {//dis <= PlayerControl.SV_TANK_WH坦克已经重叠
             dir = (dir+2)%4;
           }
           return [dir,dir];
@@ -2801,10 +3158,14 @@ SVUpdateMatrixWithTank(matrix,steps){
   SVAvoidTheOtherTank(){
     let nearestWallRect = 0;
     var nearDis = 0;
-    var tWidth = this.SV_TANK_SPEED;
+    var tWidth = PlayerControl.SV_TANK_WH;
     var myTankRect = this.SVGetStepRect(this.svMyTank.X,this.svMyTank.Y,tWidth,tWidth);
     var otherTankRect = this.SVGetStepRect(this.svOtherPlayerTank.X,this.svOtherPlayerTank.Y,tWidth,tWidth);
-
+    var l = Math.min(myTankRect.LEFT,otherTankRect.LEFT);
+    var t = Math.min(myTankRect.TOP,otherTankRect.TOP);
+    var w = Math.abs(myTankRect.LEFT - otherTankRect.LEFT);
+    var h = Math.abs(myTankRect.TOP - otherTankRect.TOP);
+    var twoTankRect = this.SVGetStepRect(l,t,w,h)
     var safeWall = [];
     for (var i = 0; i < this.wallArray.length; i++) {
       let tmpRect = this.wallArray[i];
@@ -2816,8 +3177,7 @@ SVUpdateMatrixWithTank(matrix,steps){
       let otherY = this.svOtherPlayerTank.Y + tWidth/2;
       let maxDis = Math.max(Math.abs(maxX - minX),Math.abs(maxY - minY));
 
-      let wallInCenter = tmpRect.X >= Math.min(otherX,minX) && tmpRect.X <= Math.max(otherX,maxX) ||
-        tmpRect.Y >= Math.min(otherY,minY) && tmpRect.Y <= Math.max(otherY,maxY);
+      let wallInCenter = PlayerControl.SVCheckCollide(twoTankRect,tmpRect);
       //如果maxdix比较小。说明正在绕柱子行走。
       if((otherX > minX && otherX < maxX || otherY > minY && otherY < maxY) && !wallInCenter){
         
@@ -2985,6 +3345,7 @@ SVUpdateMatrixWithTank(matrix,steps){
     var distance = PlayerControl.MAX_DISTANCE;
     var closestEnemy;
     let tWidth = PlayerControl.SV_TANK_WH;
+
     this.svEnemyTanks.forEach(enemy => {
       //如果落入我方必死区间，那么不用计算这个坦克了。半径是2.
       let radius = PlayerControl.SV_BULLET_WH;
@@ -2992,8 +3353,11 @@ SVUpdateMatrixWithTank(matrix,steps){
       let willDead = false;
       for (var i = 0; i < this.svMyBulletsRectArray.length; i++) {
         let myBulletDeadRect = this.svMyBulletsRectArray[i];
-        if (PlayerControl.SVCheckCollide(myBulletDeadRect,enemyRect)) {
-          willDead = (true && this.svEnemyTanks.length > 1);//最后一个，始终使用它
+        if (myBulletDeadRect.value == 0 && PlayerControl.SVCheckCollide(myBulletDeadRect,enemyRect)) {
+          willDead = (this.svEnemyTanks.length > 2);//最后一个(外加对手)，始终使用它
+          //一个子弹消耗一个危险区。防止一个危险区覆盖多个子弹。导致。
+          myBulletDeadRect.value = 1;
+          break;
         };
       };
 
@@ -3120,23 +3484,65 @@ SVUpdateMatrixWithTank(matrix,steps){
     var tWidth = PlayerControl.SV_TANK_WH;
     var myTankCenterX = this.svMyTank.X + tWidth/2;
     var myTankCenterY = this.svMyTank.Y + tWidth/2;
+    if (this.ahead || this.ballance) {
+      this.svMyBullets.forEach(bullet => {
+        var bulletDir = bullet['direction'];
+        if (bulletDir == direction) {
+        if (Math.abs(bullet.Y - myTankCenterY ) < (gap + 25)  || Math.abs(bullet.X - myTankCenterX) < (gap + 25)) {
+          shouldFire = false;
+        }
+      }
+      });
+      
+      return shouldFire;
+    };
+    //正常模式
     this.svMyBullets.forEach(bullet => {
       var bulletDir = bullet['direction'];
       if (bulletDir == direction) {
 
         if (bullet.direction == this.DIRECTION.LEFT || bullet.direction == this.DIRECTION.RIGHT) {
-          if (Math.abs(bullet.Y - myTankCenterY ) < gap && Math.abs(bullet.X - myTankCenterX) < tWidth*2) {
+          if (bullet.Y > this.svMyTank.Y && bullet.Y < this.svMyTank.Y + gap ) {
             shouldFire = false;
-            return shouldFire;
           }
         } else {
-          if (Math.abs(bullet.X - myTankCenterX) <  gap && Math.abs(bullet.Y - myTankCenterY) < tWidth*2) {
+          if (bullet.X > this.svMyTank.X && bullet.X < this.svMyTank.X + gap ) {
             shouldFire = false;
-            return shouldFire;
           }
         }
       }
     });
+    return shouldFire;
+  }
+
+  SVShouldFireToDirctionSword(direction,gap) {
+    if (this.svMyBullets.length == 0) {
+      return true;
+    };
+    var shouldFire = false;
+    var tWidth = PlayerControl.SV_TANK_WH;
+    var myTankCenterX = this.svMyTank.X + tWidth/2;
+    var myTankCenterY = this.svMyTank.Y + tWidth/2;
+    var bw = + PlayerControl.SV_BULLET_WH;
+    // this.svMyBullets.forEach(bullet => {
+    var bullet = this.svMyBullets[this.svMyBullets.length-1];
+      var bulletDir = bullet['direction'];
+      if (bulletDir == direction) {
+
+        if (bullet.direction == this.DIRECTION.LEFT || bullet.direction == this.DIRECTION.RIGHT) {
+          if (Math.abs(bullet.Y - myTankCenterY) > (gap ) && Math.abs(bullet.X - myTankCenterX) > tWidth) {
+            shouldFire = true;
+          }
+        } else {
+          if (Math.abs(bullet.X - myTankCenterX) > (gap)&& Math.abs(bullet.Y - myTankCenterY) > tWidth)  {
+            shouldFire = true;
+          }
+        }
+      }
+    // });
+    if(shouldFire){
+      console.log('')
+    }
     return shouldFire;
   }
 
@@ -3443,6 +3849,14 @@ SVUpdateMatrixWithTank(matrix,steps){
       ctx.rect(rect.X,rect.Y,rect.WIDTH,rect.HEIGHT);
       ctx.stroke();  
     };
+    // for (var i = 0; i < this.lockedRectArray.length; i++) {
+    //   var r = this.lockedRectArray[i];
+    //   ctx.beginPath();
+    //   ctx.lineWidth="2";
+    //   ctx.strokeStyle = '#e0f';
+    //   ctx.rect(r.X,r.Y,r.WIDTH,r.HEIGHT);
+    //   ctx.stroke();  
+    // };
     
     
   }
@@ -3503,7 +3917,26 @@ SVUpdateMatrixWithTank(matrix,steps){
     // ctx.fillStyle = 'orange';
     ctx.font="12px Georgia";
     ctx.fillStyle = 'yellow'
-    ctx.fillText(string,myTankRect.X,myTankRect.Y+20);
+    ctx.fillText(string,myTankRect.X,myTankRect.Y + 20);
+    if (this.svOtherPlayerTank) {
+      //对手坦克坐标
+      myTankRect = this.SVGetStepRect(this.svOtherPlayerTank.X,this.svOtherPlayerTank.Y,PlayerControl.SV_TANK_WH,PlayerControl.SV_TANK_WH);
+      var string = "";
+      string = string + myTankRect.X +","+myTankRect.Y;
+      // ctx.fillStyle = 'orange';
+      ctx.font="12px Georgia";
+      ctx.fillStyle = 'yellow'
+      ctx.fillText(string,myTankRect.X,myTankRect.Y + 20);  
+    };
+    
+    //
+    if (this.ahead || this.ballance) {
+      ctx.beginPath();
+      ctx.lineWidth = "2";
+      ctx.strokeStyle = "green";
+      ctx.rect(this.centerSafeRect.X,this.centerSafeRect.Y,this.centerSafeRect.WIDTH,this.centerSafeRect.HEIGHT);
+      ctx.stroke();  
+    };
 }
 
  SVLogMatrixHor(){
@@ -3755,6 +4188,72 @@ SVUpdateMatrixWithTank(matrix,steps){
       }
     };
     return Math.floor(minDis/this.SV_BULLET_SPEED);
+  }
+  //
+  svCenterSafeArea(){
+    var left = 0 
+    var top = 0
+    var right = 0
+    var bottom = 0;
+    var wallWidth = 0;
+
+    for (var i = 0; i < this.wallArray.length; i++) {
+      let rect = this.wallArray[i];
+      if (i == 0) {
+        left = rect.LEFT;
+        top = rect.TOP;
+        right = rect.RIGHT;
+        bottom = rect.BOTTOM;
+        wallWidth = rect.WIDTH;
+      }else{
+        if (rect.LEFT < left) {
+          left = rect.LEFT;
+        };
+        if (rect.TOP < top) {
+          top = rect.TOP;
+        };
+        if (rect.RIGHT > right) {
+          right = rect.RIGHT;
+        };
+        if (rect.BOTTOM > bottom) {
+          bottom = rect.BOTTOM;
+        };
+      }
+      
+    };
+    this.centerSafeRect = this.SVGetStepRect(left + wallWidth,top + wallWidth , right - left - wallWidth*2,bottom - top - wallWidth*2);
+  }
+  getWallExtandArray(){
+    var gap = 50;
+    if (this.wallArray.length >0 && this.wallExtandArray.length == 0) {
+      for (var i = 0; i < this.wallArray.length; i++) {
+      var rect = this.wallArray[i];
+      var newRect = this.SVGetStepRect(rect.LEFT - gap,rect.TOP - gap,rect.WIDTH + gap*2, gap);
+      this.wallExtandArray.push(newRect);
+      newRect = this.SVGetStepRect(rect.LEFT - gap,rect.TOP - gap,gap, rect.HEIGHT+gap*2);
+      this.wallExtandArray.push(newRect);
+      newRect = this.SVGetStepRect(rect.RIGHT,rect.TOP - gap,gap, rect.HEIGHT+gap*2);
+      this.wallExtandArray.push(newRect);
+      newRect = this.SVGetStepRect(rect.LEFT - gap ,rect.BOTTOM,rect.WIDTH+gap*2, gap);
+      this.wallExtandArray.push(newRect);
+    }
+    };
+  }
+
+  otherPlayerCollideWallExtand(TankObject){
+    var tw = PlayerControl.SV_TANK_WH;
+    var otherTankRect = this.SVGetStepRect(TankObject.X+tw/2,TankObject.Y+tw/2,1,1);
+    var myTankRect = this.SVGetStepRect(this.svMyTank.X+tw/2,this.svMyTank.Y+tw/2,1,1);
+    
+    for (var i = 0; i < this.wallExtandArray.length; i++) {
+      var rect = this.wallExtandArray[i];
+      let collide = PlayerControl.SVCheckCollide(rect, otherTankRect);
+      let collide2 = PlayerControl.SVCheckCollide(rect, myTankRect);
+      if (collide && collide2) {
+        return true;
+      };
+    };
+    return false;
   }
 
 

@@ -861,7 +861,7 @@ window.playerB = new (class PlayerControl {
         if (CanAttack[currentTankDirect] != 0) {
           if (CanAttack[currentTankDirect] < 300) attack = 1
           else {
-            if (aMyBulletCount1.length < 3) {
+            if (aMyBulletCount2.length < 3) {
               attack = 1
             }
           }

@@ -6,7 +6,7 @@ window.playerA = new (class PlayerControl {
     this.#fireEv = new CustomEvent("keydown");
 
     
-    this.finals = 0 //决赛
+    this.finals = 1 //决赛
     this.tank_wh = 50
     this.bullet_wh = 10
     
@@ -14,7 +14,7 @@ window.playerA = new (class PlayerControl {
     this.tt_safe_min_dis = 110 // 坦克与坦克之间的安全距离 计算得来
 
     this.avoid_threshold_safe = 0.02    // 躲避时 低于此值 则为安全
-    this.avoid_threshold_denger = 0.5   // 躲避时 如果高于此值 就很危险了 
+    this.avoid_threshold_denger = 0.6   // 躲避时 如果高于此值 就很危险了 
     this.avoid_last_direct = undefined  // 最近一次躲避方向
 
     this.attack_threshold_fire = this.tank_wh * 1   // 进攻时 低于此值 便开火
@@ -32,6 +32,15 @@ window.playerA = new (class PlayerControl {
     this.abbbp_last_fire_direct = undefined     // 最近一次开火时的方向
 
     this.avoid_predict_bullet_weight = 0.5      // 逃离时有近距离的坦克，预测其发射子弹对我造成的影响，采取比例  day1、day2都是0.25
+
+    this.attack_rock_prefer_direct = undefined  // 进击时石头附近偏爱的方向
+   
+    this.abbbp_only_opponent = 0                // 只剩下敌人
+    this.abbbp_can_waste_bullet = 1             // 能否浪费子弹
+
+    this.abbbp_be_chased_count = 0              // 被追次数
+
+    this.abbbp_tactics = "N"                    // N无  A进攻  R逃跑
   }
 
   land() {
@@ -58,11 +67,14 @@ window.playerA = new (class PlayerControl {
         const other_tank = this.type === "B" ? a_tank : b_tank
         const other_bullets = this.type === "B" ? aMyBulletCount1 : aMyBulletCount2
         if (!other_tank) break
+        this.abbbp_only_opponent = (enemy_tanks.length == 0) ? 1 : 0
+        this.abbbp_can_waste_bullet = (this.abbbp_only_opponent && this.abbbp_bullet_surplus <= 2) ? 0 : 1
 
         enemy_bullets = enemy_bullets.slice()
         enemy_tanks = enemy_tanks.slice()
         enemy_tanks.push(other_tank)
         enemy_bullets = enemy_bullets.concat(other_bullets)
+
       } while(0)
     }
     
@@ -74,11 +86,11 @@ window.playerA = new (class PlayerControl {
     this.#setName()
     if (this.abbbp_fire) {
       this.abbbp_fire = 0
-      if (this.abbbp_count > 30) {
+      // if (this.abbbp_count > 30) {
         this.#fire();
         this.abbbp_last_fire_index = this.abbbp_count
         console.log("!!!fire!!!", this.abbbp_bullet_surplus)
-      }
+      // }
     }
   }
 
@@ -99,7 +111,10 @@ window.playerA = new (class PlayerControl {
       direct = avoid_res[0]
       console.log("abbb2_land","attack_want_fire_direct=" + this.attack_want_fire_direct, "attack_chase_count=" + this.attack_chase_count, "abbbp_last_fire_direct=" + this.abbbp_last_fire_direct)
       if (avoid_res[1] == 0) {
-        if (this.attack_want_fire_direct != undefined && this.attack_chase_count >= 2) {
+        if (this.abbbp_only_opponent /** && ++this.abbbp_be_chased_count > 7 */) {
+          //direct = this.abbb2_find_rock_protection()
+        }else if (this.attack_want_fire_direct != undefined && this.attack_chase_count >= 2) {
+          this.abbbp_only_opponent = 0
           direct = this.attack_want_fire_direct
           this.abbbp_fire = 1
           this.attack_want_fire_direct = undefined
@@ -112,10 +127,12 @@ window.playerA = new (class PlayerControl {
       }
       console.log("####### 1 avoid #######",direct,this.abbbp_fire)
     }else {
+      this.abbbp_only_opponent = 0
       // [进击方向 是否开火]
       let att = this.abbb2_attack(my_tank, my_bullets, enemy_tanks)
       direct = att[1]
       this.abbbp_fire = att[0]
+
       if (this.abbbp_fire) {
         this.abbbp_last_fire_direct = direct
       }
@@ -140,6 +157,7 @@ window.playerA = new (class PlayerControl {
     const mt_x1 = my_tank.X + this.tank_wh / 2.0
     const mt_y1 = screenY - (my_tank.Y + this.tank_wh / 2.0)
     const that = this
+    const mt_direct = my_tank.direction
 
     var min_dis_tanks = []
 
@@ -149,7 +167,12 @@ window.playerA = new (class PlayerControl {
       
       let pos_x = ent_x - mt_x1 
       let pos_y = ent_y - mt_y1
-      let dis = Math.sqrt(Math.pow(pos_x, 2) + Math.pow(pos_y, 2))
+      let dis = 0
+      // if (that.abbbp_count < 50) {
+        // dis = Math.abs(pos_x)
+      // }else {
+        dis = Math.sqrt(Math.pow(pos_x, 2) + Math.pow(pos_y, 2))
+      // }
 
       let new_ent = {
         dis: dis,
@@ -168,7 +191,7 @@ window.playerA = new (class PlayerControl {
       }
     })
     var min_dis_ent = min_dis_tanks[0]
-    if (my_bullets.length > 0) {
+    if (that.abbbp_count > 100 && my_bullets.length > 0) {
       // 剔除可能被我命中的tank
       for (var i = 0; i < my_bullets.length; i++) {
         let my_b = my_bullets[i]
@@ -201,11 +224,16 @@ window.playerA = new (class PlayerControl {
     var fire = 0
     var move_direction = undefined
     var type = ""
-    if (this.finals) {
-      let rock_move = this.abbbtool_detect_rock([mt_x1,mt_y1],[move_x,move_y],1)
-      move_x = rock_move[0]
-      move_y = rock_move[1]
+    let rock_can_move = this.abbbtool_rock_nearby_can_move_direct([mt_x1,mt_y1])
+    console.log("rock_can_move",rock_can_move)
+    if (rock_can_move[0] * rock_can_move[1] * rock_can_move[2] * rock_can_move[3] * rock_can_move[4] == 0) {
+      
     }
+    // if (this.finals) {
+    //   let rock_move = this.abbbtool_detect_rock([mt_x1,mt_y1],[move_x,move_y],1)
+    //   move_x = rock_move[0]
+    //   move_y = rock_move[1]
+    // }
     if (move_x != 0 || move_y != 0) {
       do {
         if (min_dis < this.tt_safe_min_dis) {
@@ -244,6 +272,16 @@ window.playerA = new (class PlayerControl {
           }else {
             move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
           }
+
+          if (rock_can_move[move_direction] == 0) {
+            if (this.attack_rock_prefer_direct == undefined) {
+              this.attack_rock_prefer_direct = (move_direction + 1) % 4
+            }
+            move_direction = this.attack_rock_prefer_direct
+          }else {
+            this.attack_rock_prefer_direct = undefined
+          }
+
           chase_count_weight = 0.2
           this.attack_want_fire_direct = move_direction
         }else {
@@ -252,27 +290,53 @@ window.playerA = new (class PlayerControl {
           let can_fire = (this.abbbp_count - this.abbbp_last_fire_index > 5) ? 1 : 0
           if (Math.abs(move_x) < this.attack_threshold_fire && can_fire) {
             move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+            if (move_direction == mt_direct) {
+              move_direction = this.#DIRECTION.STOP
+            }
             fire = 1
             this.attack_chase_direct = undefined
+            if (rock_can_move[move_direction] == 0) {
+              move_direction = (move_direction + 1) % 4
+              fire = 0
+            }
             break
           }else if (Math.abs(move_y) < this.attack_threshold_fire && can_fire) {
             move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+            if (move_direction == mt_direct) {
+              move_direction = this.#DIRECTION.STOP
+            }
             fire = 1
             this.attack_chase_direct = undefined
+            if (rock_can_move[move_direction] == 0) {
+              move_direction = (move_direction + 1) % 4
+              fire = 0
+            }
             break
           }else {
             // 靠近
             type = "slow_chase"
-            if (Math.abs(move_y) > Math.abs(move_x) || this.abbbp_count < 30) {
+            if (Math.abs(move_y) > Math.abs(move_x) || this.abbbp_count < 20) {
               move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
               this.attack_want_fire_direct = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+              
+              if (rock_can_move[move_direction] == 0) {
+                move_direction = this.attack_want_fire_direct
+              }else if (rock_can_move[this.attack_want_fire_direct] == 0) {
+                this.attack_want_fire_direct = undefined
+              }
             }else if (Math.abs(move_y) <= Math.abs(move_x)) {
               move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
               this.attack_want_fire_direct = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+
+              if (rock_can_move[move_direction] == 0) {
+                move_direction = this.attack_want_fire_direct
+              }else if (rock_can_move[this.attack_want_fire_direct] == 0) {
+                this.attack_want_fire_direct = undefined
+              }
             } 
           }
         }
-        if (this.abbbp_count < 25) {
+        if (this.abbbp_count < 20 - this.attack_chase_count_normal) {
           break  
         }
 
@@ -289,10 +353,10 @@ window.playerA = new (class PlayerControl {
           move_direction = this.attack_want_fire_direct
         }
       }while(0)
-      if (this.abbbp_count < 300 && fire && Math.random() < 0.2 && (mt_y1 / screenY) > 0.6) {
-        type += "_idiot"
-        move_direction = (mt_x1 < screenX / 2.0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
-      }
+      // if (this.abbbp_count < 30 && Math.random() < 0.2) {
+      //   type += "_idiot"
+      //   move_direction = (mt_x1 < screenX / 2.0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+      // }
       console.log("abbb2_attack","final ~~~~", type, "move_direction=" + move_direction, "fire=" + fire, "chase_direct=" + this.attack_chase_direct, "count=" + this.attack_chase_count)
     }else {
       move_direction = this.#DIRECTION.STOP
@@ -326,7 +390,12 @@ window.playerA = new (class PlayerControl {
     //const wall_weight_y = 1
     const edges = this.abbbtool_wall_edge(enemy_tanks) // 上 右 下 左
     const wall_weight = 1
-    console.log("edgesedgesedges",edges)
+    const wall_can_move = this.abbbtool_wall_nearby_can_move_direct([mt_x1,mt_y1])
+    const rock_can_move = this.abbbtool_rock_nearby_can_move_direct([mt_x1, mt_y1])
+    // if (wall_can_move[0] * wall_can_move[1] * wall_can_move[2] * wall_can_move[3] == 0) {
+    //   debugger
+    // }
+    //console.log("edgesedgesedges",edges)
     /** -------- 墙 -------- */ 
     function aloof_wall() {
       let wall_move_x = 0
@@ -386,6 +455,7 @@ window.playerA = new (class PlayerControl {
 
       if (inner < 0 && Math.abs(outer) < that.tb_safe_min_dis) {
         console.log("abbb2_avoid","-------pos_xy=",pos_x,pos_y, "spd_xy=", spd_x,spd_y,"bullet_xy=", enb_x, enb_y, "direct=" + enb.direction," radian=" + enb_radian)
+        
         // 预测可能命中我的子弹
         let tank_way = 0
         let bullet_way = 0
@@ -404,14 +474,69 @@ window.playerA = new (class PlayerControl {
         if (tank_time[0] > 1 && (tank_time[0] > bullet_time[1] || tank_time[1] < bullet_time[0])) {
           // 无法命中
         }else {
+
+          // 判断子弹是否被石块遮挡
+          // let enb_end_point = undefined
+          // if (enb.direction == that.#DIRECTION.LEFT || enb.direction == that.#DIRECTION.RIGHT) {
+          //   enb_end_point = [mt_x1, enb_y]
+          // }else {
+          //   enb_end_point = [enb_x, mt_y1]
+          // }
+          // if (enb_end_point != undefined) { 
+          //   let rock = that.abbbtool_rock_mask_bullet([enb_x, enb_y], enb_end_point, enb.direction)
+          //   if (rock == 1) {
+          //     console.log("abbbtool_rock_mask_bullet",[enb_x, enb_y], enb_end_point, enb.direction)
+          //     return undefined
+          //   }
+          // }
+
           let tmp_dir = enb_radian + (Math.sign(outer) * (Math.PI / 2))
           let tmp_dis = Math.pow(pos_x, 2) + Math.pow(pos_y, 2)
-          let tmp_move_x = Math.round(Math.cos(tmp_dir)) * (10000 / tmp_dis)
-          let tmp_move_y = Math.round(Math.sin(tmp_dir)) * (10000 / tmp_dis)
-          console.log("abbb2_avoid", "tmp_move_xy=" + tmp_move_x, tmp_move_y)
+          let tmp_weight = (10000 / tmp_dis)
+          let tmp_move_x = Math.round(Math.cos(tmp_dir)) * tmp_weight
+          let tmp_move_y = Math.round(Math.sin(tmp_dir)) * tmp_weight
+          let type = ""
           //if (Math.abs(tmp_move_x) >= that.avoid_threshold_safe || Math.abs(tmp_move_y) >= that.avoid_threshold_safe) {
-            let denger = (tank_time[0] <= 0 || Math.max(Math.abs(tmp_move_x), Math.abs(tmp_move_y)) > that.avoid_threshold_denger) ? 1 : 0
-            return [denger, tmp_move_x, tmp_move_y]
+          let denger = (/** tank_time[0] <= 0 || */ Math.max(Math.abs(tmp_move_x), Math.abs(tmp_move_y)) > that.avoid_threshold_denger) ? 1 : 0
+          console.log("abbb2_avoid", "tmp_move_xy=" + tmp_move_x, tmp_move_y, "denger=" + denger, type)
+          let tmp_direct = that.abbbtool_avoid_move_xy_2_direct(tmp_move_x, tmp_move_y)
+          if (tmp_direct != undefined && wall_can_move[tmp_direct] == 0) {
+            type += "#wall_dont_move"
+            if (tmp_direct == that.#DIRECTION.LEFT || tmp_direct == that.#DIRECTION.RIGHT) {
+              type += "#LR"
+              tmp_move_x = 0
+              tmp_move_y = Math.round(Math.sin(enb_radian)) * tmp_weight
+              if (tank_time[0] < 0) {
+                tmp_move_x = -1 * tmp_move_x
+              }else {
+                tmp_move_x = 0
+                tmp_move_y = Math.round(Math.sin(enb_radian)) * tmp_weight
+              }
+            }else if (tmp_direct == that.#DIRECTION.UP || tmp_direct == that.#DIRECTION.DOWN) {
+              type += "#UD"
+              if (tank_time[0] < 0) {
+                // 就在射程内
+                tmp_move_y = -1 * tmp_move_y
+              }else {
+                tmp_move_x = Math.round(Math.cos(enb_radian)) * tmp_weight
+                tmp_move_y = 0
+              }
+            }
+          }else if (tmp_dir != undefined && rock_can_move[tmp_dir] == 0) {
+            type += "#rock_dont_move"
+            if (tmp_direct == that.#DIRECTION.LEFT || tmp_direct == that.#DIRECTION.RIGHT) {
+              type += "#LR"
+              tmp_move_x = 0
+              tmp_move_y = Math.round(Math.sin(enb_radian)) * tmp_weight
+            }else if (tmp_direct == that.#DIRECTION.UP || tmp_direct == that.#DIRECTION.DOWN) {
+              type += "#UD"
+              tmp_move_x = Math.round(Math.cos(enb_radian)) * tmp_weight
+              tmp_move_y = 0
+            }
+          }
+          console.log("abbb2_avoid", "tmp_move_xy=" + tmp_move_x, tmp_move_y, "denger=" + denger, "tmp_direct=" + tmp_direct, type)
+          //let denger = (tank_time[0] <= 0) ? 1 : 0
+          return [denger, tmp_move_x, tmp_move_y]
           //}
         }
       }
@@ -505,16 +630,26 @@ window.playerA = new (class PlayerControl {
           }
         }
       }
-      if (this.finals) {
-        let rock_move = this.abbbtool_detect_rock([mt_x1, mt_y1],[move_x, move_y],0)
-        move_x = rock_move[0]
-        move_y = rock_move[1]
-      }
+      // if (this.finals) {
+      //   let rock_move = this.abbbtool_detect_rock([mt_x1, mt_y1],[move_x, move_y],0)
+      //   move_x = rock_move[0]
+      //   move_y = rock_move[1]
+      // }
+      //let touch_wall_xy = this.abbbtool_avoid_touch_wall([mt_x1,mt_y1],[])
       if (Math.abs(move_x) > Math.abs(move_y)) {
         move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
       }else {
         move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
       }
+      // let rock_can_move = this.abbbtool_rock_nearby_can_move_direct([mt_x1, mt_y1])
+      // if (rock_can_move[move_direction] == 0) {
+      //   type += "#rock_dont_move"
+      //   if (move_direction == this.#DIRECTION.RIGHT || move_direction == this.#DIRECTION.LEFT) {
+      //     move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+      //   }else {
+      //     move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+      //   }
+      // }
     }
     // else {
     //   if (has_too_close_bullets) {  
@@ -536,6 +671,87 @@ window.playerA = new (class PlayerControl {
     }
     console.log("abbb2_avoid final ==== ",type, "move_xy=" + move_x, move_y, "direct="+move_direction , "too_close_b=" + has_too_close_bullets)
     return [move_direction, has_too_close_bullets]
+  }
+
+  // 寻找石头保护
+  abbb2_find_rock_protection(my_tank, other_tank) {
+    // 找到最近的tank
+    const rocks = ametal
+    const that = this
+    if (rocks == undefined) {
+      return undefined
+    }
+    const rock_wh = 100
+    const rock_h1 = rock_wh / 2.0
+    const mt_x1 = my_tank.X + this.tank_wh / 2.0
+    const mt_y1 = screenY - (my_tank.Y + this.tank_wh / 2.0)
+
+    let min_dis = Math.pow(screenY, 2)
+    let min_rock_x1 = 0
+    let min_rock_y1 = 0
+
+    for (let i = 0; i < rocks.length; i++) {
+      let rock = rocks[i]
+      let r_center_x = rock[0] + rock_h1
+      let r_center_y = (screenY - rock[1]) - rock_h1
+      let dis = Math.sqrt(Math.pow(r_center_x - mt_x1, 2) + Math.pow(r_center_y - mt_y1, 2))
+      if (dis < min_dis) {
+        min_dis = dis
+        min_rock_x1 = r_center_x
+        min_rock_y1 = r_center_y
+      }
+    }
+
+    
+  }
+
+  // 判断子弹是否被石头格挡
+  abbbtool_rock_mask_bullet(start_point, end_point, direct) {
+    const rocks = ametal
+    const that = this
+    if (rocks == undefined) {
+      return 0
+    }
+    const rock_wh = 100
+    const rock_h1 = rock_wh / 2.0
+  
+    for (let i = 0; i < rocks.length; i++) {
+      let rock = rocks[i]
+      let rx = rock[0]
+      let ry = screenY - rock[1]
+      let max_rx = rx + rock_wh
+      let max_ry = ry + rock_wh
+      if (direct == this.#DIRECTION.LEFT || direct == this.#DIRECTION.RIGHT) {
+        if (ry <= start_point[1] && start_point[1] <= max_ry) {
+          if (Math.min(start_point[0], end_point[0]) > max_rx || Math.max(start_point[0], end_point[0]) < rx) {
+
+          }else {
+            //debugger
+            return 1
+          }
+        }
+      }else {
+        if (rx <= start_point[0] && start_point[0] <= max_rx) {
+          if (Math.min(start_point[1], end_point[1]) > max_ry || Math.max(start_point[1], end_point[1]) < ry) {
+
+          }else {
+            //debugger
+            return 1
+          }
+        }
+      }
+    }
+    return 0
+  } 
+
+  abbbtool_avoid_move_xy_2_direct(move_x,move_y) {
+    let move_direction = undefined
+    if (Math.abs(move_x) > Math.abs(move_y)) {
+      move_direction = (move_x > 0) ? this.#DIRECTION.RIGHT : this.#DIRECTION.LEFT
+    }else {
+      move_direction = (move_y > 0) ? this.#DIRECTION.UP : this.#DIRECTION.DOWN
+    }
+    return move_direction
   }
 
   abbbtool_wall_edge(enemy_tanks) {
@@ -610,6 +826,61 @@ window.playerA = new (class PlayerControl {
     return move_direction
   }
 
+  // 石头变子弹，太 stupid 了
+  abbbtool_rock_2_bullets() {
+
+    const rocks = ametal
+    const that = this
+
+    var predict_bullets = []
+
+    if (rocks != undefined) {
+
+      const rock_wh = 100
+      const rock_h1 = rock_wh / 2.0
+      const gap = this.tank_wh * 0.4 // tank 和 rock 边边的间隙
+      const max_gap = rock_h1 + gap + this.tank_wh / 2.0
+
+      for (let i = 0; i < rocks.length; i++) {
+        let rock = rocks[i]
+        let r_center_x = rock[0] + rock_h1
+        let r_center_y = (screenY - rock[1]) - rock_h1          
+
+        let xxx = 80
+        for (let nb_i = 0; nb_i < 4; nb_i++) {
+          var nb = {}
+          var nb_x = 0
+          var nb_y = 0
+          if(nb_i == that.#DIRECTION.DOWN) {
+            nb_x = r_center_x + 0;
+            nb_y = r_center_y + xxx;
+          }else if(nb_i == that.#DIRECTION.LEFT) {
+            nb_x = r_center_x + xxx;
+            nb_y = r_center_y + 0;
+          }else if(nb_i == that.#DIRECTION.UP) {
+            nb_x = r_center_x + 0;
+            nb_y = r_center_y - xxx;
+          }else if(nb_i == that.#DIRECTION.RIGHT) {
+            nb_x = r_center_x - xxx;
+            nb_y = r_center_y + 0;
+          }
+
+          nb.direction = nb_i
+          nb.X = nb_x
+          nb.Y = screenY - nb_y
+
+          // nb.direction = nb_i
+          // nb.X = r_center_x
+          // nb.Y = screenY - r_center_y
+          nb.speed = 10
+          predict_bullets.push(nb)
+        }
+
+      }
+    }
+    return predict_bullets
+  }
+
   /**
    * 石头 [400, 149.25, 100, 100]
    *      左上角        宽高
@@ -654,6 +925,54 @@ window.playerA = new (class PlayerControl {
     }
 
     return move_vector
+  }
+
+  // 根据当前位置获取墙壁附近可行性
+  abbbtool_wall_nearby_can_move_direct(tank_center) {
+    let res = [1,1,1,1,1]
+    const gap = 10
+    const mt_h1 = this.tank_wh / 2.0
+    if (tank_center[0] + mt_h1 + gap >= screenX) {
+      res[this.#DIRECTION.RIGHT] = 0  
+    }else if (tank_center[0] - mt_h1 <= gap) {
+      res[this.#DIRECTION.LEFT] = 0
+    }
+    if (tank_center[1] + mt_h1 + gap >= screenY) {
+      res[this.#DIRECTION.UP] = 0  
+    }else if (tank_center[1] - mt_h1 <= gap) {
+      res[this.#DIRECTION.DOWN] = 0  
+    }
+    return res
+  }
+
+  // 根据当前位置获取石头附近可行性
+  abbbtool_rock_nearby_can_move_direct(tank_center) {
+    const rocks = ametal
+    let res = [1,1,1,1,1]
+    if (rocks == undefined) {
+      return res
+    }
+    const rock_wh = 100
+    const rock_h1 = rock_wh / 2.0
+    const gap = this.tank_wh * 0.4 // tank 和 rock 边边的间隙
+    const min_gap = rock_h1 + this.tank_wh / 2.0
+    const max_gap = min_gap + gap
+
+    for (let i = 0; i < rocks.length; i++) {
+      let rock = rocks[i]
+      let r_center_x = rock[0] + rock_h1
+      let r_center_y = (screenY - rock[1]) - rock_h1
+      let v_x = tank_center[0] - r_center_x
+      let v_y = tank_center[1] - r_center_y
+      if (Math.abs(v_x) <= max_gap && Math.abs(v_y) <= max_gap) {
+        res[this.#DIRECTION.RIGHT] = (tank_center[0] < r_center_x && Math.abs(v_y) <= min_gap) ? 0 : 1
+        res[this.#DIRECTION.LEFT] = (tank_center[0] > r_center_x && Math.abs(v_y) <= min_gap) ? 0 : 1
+        res[this.#DIRECTION.UP] = (tank_center[1] < r_center_y && Math.abs(v_x) <= min_gap) ? 0 : 1
+        res[this.#DIRECTION.DOWN] = (tank_center[1] > r_center_y && Math.abs(v_x) <= min_gap) ? 0 : 1
+        break
+      }
+    }      
+    return res
   }
 
 

@@ -23,6 +23,7 @@ window.playerA = new (class PlayerControl {
       }
     });
 
+
     const tankWH = 50;      //坦克的宽高
     const bulletWH = 10;    //子弹的宽高
 
@@ -67,7 +68,7 @@ window.playerA = new (class PlayerControl {
     const scopeDis = 5*tankWH;
 
     //坦克子弹预测范围半径大小
-    const scanDis = 8*tankWH;
+    const scanDis = 10*tankWH;
 
     //已经尝试移动过的方向
     const alreadyTryDirs = [];
@@ -84,7 +85,7 @@ window.playerA = new (class PlayerControl {
       this.#calcAroundBts(myTank, scanDis, enBullets, tankWH, bulletWH, scanBullets);
     }
     //添加躲避坦克的方向
-    let latelyTank = this.#dirFilter(scopeDis, myTank, aiTanks, tankWH, escapeDirs, scopeTanks, fireDirs, myAiTanks, enTank, enBullets, bulletWH);
+    let latelyTank = this.#dirFilter(scopeDis, myTank, aiTanks, tankWH, escapeDirs, scopeTanks, fireDirs, myAiTanks, enTank, enBullets, bulletWH, myBullets);
 
     //moveDirection = this.#avoidTank(myTank, centerDirs, scanBullets, tankWH, bulletWH, alreadyTryDirs);
 
@@ -94,7 +95,7 @@ window.playerA = new (class PlayerControl {
     }
     //追击敌方坦克
     if(moveDirection == undefined) {
-      moveDirection = this.#attackTank(myTank, latelyTank, tankWH, bulletWH, scanBullets, myAiTanks, enTank, enBullets, alreadyTryDirs);
+      moveDirection = this.#attackTank(myTank, latelyTank, tankWH, bulletWH, scanBullets, myAiTanks, enTank, enBullets, alreadyTryDirs, myBullets);
     }
     //可以停留，直接开炮
     if(moveDirection == undefined) {
@@ -130,8 +131,10 @@ window.playerA = new (class PlayerControl {
       moveDirection = this.#avoidBullet(myTank, scanBullets, tankWH, bulletWH, alreadyTryDirs);
     }
     //开火
-    if($.inArray(myTank.direction, fireDirs) >= 0){
-      this.#myTankFire(myTank, aiTanks.length, tankWH);
+    if(latelyTank == enTank && enTank != undefined){
+      this.#myTankFire(fireDirs, myTank, aiTanks.length, tankWH, myBullets.length, true, enTank);
+    }else {
+      this.#myTankFire(fireDirs, myTank, aiTanks.length, tankWH, myBullets.length, false, enTank);
     }
     if(moveDirection != undefined){
       this.priority = moveDirection;
@@ -161,6 +164,10 @@ window.playerA = new (class PlayerControl {
 
 
   #calcTwoPointDistance(ax, ay, bx, by) {
+    let amet = this.#isAmetalCol(ax, ay, bx, by);
+    if(ametal.length > 0 && amet != undefined){
+      return  amet[2] + Math.sqrt(Math.pow(ax - bx, 2) + Math.pow(ay - by, 2));
+    }
     return Math.sqrt(Math.pow(ax - bx, 2) + Math.pow(ay - by, 2));
   }
 
@@ -480,7 +487,7 @@ window.playerA = new (class PlayerControl {
   }
 
   //过滤设置方向
-  #dirFilter(scopeDis, myTank, aiTanks, tankWH, escapeDirs, scopeTanks, fireDirs, myAiTanks, enTank, enBullets, bulletWH){
+  #dirFilter(scopeDis, myTank, aiTanks, tankWH, escapeDirs, scopeTanks, fireDirs, myAiTanks, enTank, enBullets, bulletWH, myBullets){
 
     let latelyTank = undefined;
     let lateDis = 2000;
@@ -530,49 +537,74 @@ window.playerA = new (class PlayerControl {
       if(dis < scopeDis){
         scopeTanks.push(aiTk);
         //当有坦克过于靠近，则指定逃离方向
-        let site_R = 1.4*tankWH;
-        let site_L = 6*tankWH;
+        let site_R = 1.5*tankWH;
+        let site_L = 6.5*tankWH;
         let site_S = 0.4*tankWH;
         if(i == -1){
           let step = this.#enTankNoFire(enBullets, bulletWH);
-          if( step> 10){
-            site_R = 0*tankWH;
+          site_R = 0*tankWH;
+          if(step > 10 || this.#forceTurn(myTank, enTank, myBullets, tankWH)){
             site_L = 0*tankWH;
             site_S = 0*tankWH;
-          }else if(step > 5){
-            site_R = 0*tankWH;
-            site_L = 4.5*tankWH;
-            site_S = 0*tankWH;
+          }else if(step > 6){
+            site_L = 3*tankWH;
+            site_S = 0;
           }else {
-            site_R = 0*tankWH;
-            site_L = 5.5*tankWH;
-            site_S = 0.3*tankWH;
+            site_L = 4*tankWH;
+            site_S = 12;
           }
         }
         if(dis < site_R || this.#isCalcCross(myTank, latelyTank, site_L, site_S, tankWH)){
-          if(disX > disY){
-            if(myTank.Y > latelyTank.Y){
-              escapeDirs.push(this.#DIRECTION.DOWN);
-            }else{
-              escapeDirs.push(this.#DIRECTION.UP);
-            }
-            if(myTank.X > latelyTank.X){
-              escapeDirs.push(this.#DIRECTION.RIGHT);
-            }else{
-              escapeDirs.push(this.#DIRECTION.LEFT);
+          if(i == -1){
+            if(disX < disY){
+              if(myTank.X > latelyTank.X){
+                escapeDirs.push(this.#DIRECTION.RIGHT);
+              }else{
+                escapeDirs.push(this.#DIRECTION.LEFT);
+              }
+              if(myTank.Y > latelyTank.Y){
+                escapeDirs.push(this.#DIRECTION.DOWN);
+              }else{
+                escapeDirs.push(this.#DIRECTION.UP);
+              }
+            }else {
+              if(myTank.Y > latelyTank.Y){
+                escapeDirs.push(this.#DIRECTION.DOWN);
+              }else{
+                escapeDirs.push(this.#DIRECTION.UP);
+              }
+              if(myTank.X > latelyTank.X){
+                escapeDirs.push(this.#DIRECTION.RIGHT);
+              }else {
+                escapeDirs.push(this.#DIRECTION.LEFT);
+              }
             }
           }else {
-            if(myTank.X > latelyTank.X){
-              escapeDirs.push(this.#DIRECTION.RIGHT);
+            if(disX > disY){
+              if(myTank.Y > latelyTank.Y){
+                escapeDirs.push(this.#DIRECTION.DOWN);
+              }else{
+                escapeDirs.push(this.#DIRECTION.UP);
+              }
+              if(myTank.X > latelyTank.X){
+                escapeDirs.push(this.#DIRECTION.RIGHT);
+              }else{
+                escapeDirs.push(this.#DIRECTION.LEFT);
+              }
             }else {
-              escapeDirs.push(this.#DIRECTION.LEFT);
-            }
-            if(myTank.Y > latelyTank.Y){
-              escapeDirs.push(this.#DIRECTION.DOWN);
-            }else{
-              escapeDirs.push(this.#DIRECTION.UP);
+              if(myTank.X > latelyTank.X){
+                escapeDirs.push(this.#DIRECTION.RIGHT);
+              }else {
+                escapeDirs.push(this.#DIRECTION.LEFT);
+              }
+              if(myTank.Y > latelyTank.Y){
+                escapeDirs.push(this.#DIRECTION.DOWN);
+              }else{
+                escapeDirs.push(this.#DIRECTION.UP);
+              }
             }
           }
+
         }
       }
       //当防御范围内的坦克数量过多，则指定逃离方向
@@ -719,9 +751,62 @@ window.playerA = new (class PlayerControl {
   }
 
   //开火
-  #myTankFire(myTank, aiTankNum, tankWH){
-    let fireDir = myTank.direction;
+  #myTankFire(fireDirs, myTank, aiTankNum, tankWH, myBulletNum, isEnTank, enTank){
 
+    let fireDir = myTank.direction;
+    if(isEnTank){
+
+      let tmpBullet = new Object();
+      let tmpTank = new Object();
+      tmpTank.W = tankWH;
+      tmpTank.H = tankWH;
+
+      if(this.#DIRECTION.UP == fireDir){
+        tmpBullet.X = myTank.X + tankWH/2;
+        tmpBullet.Y = myTank.Y - 5;
+        tmpTank.X = enTank.X+15;
+        tmpTank.Y = enTank.Y+tankWH;
+        tmpTank.W = 20;
+        tmpTank.H = 29;
+      }else if(this.#DIRECTION.DOWN == fireDir){
+        tmpBullet.X = myTank.X + tankWH/2;
+        tmpBullet.Y = myTank.Y + tankWH + 5;
+        tmpTank.X = enTank.X+15;
+        tmpTank.Y = enTank.Y-29;
+        tmpTank.W = 20;
+        tmpTank.H = 29;
+      }else if(this.#DIRECTION.LEFT == fireDir){
+        tmpBullet.X = myTank.X - 5;
+        tmpBullet.Y = myTank.Y + tankWH/2;
+        tmpTank.X = enTank.X+tankWH;
+        tmpTank.Y = enTank.Y+15;
+        tmpTank.W = 29;
+        tmpTank.H = 20;
+      }else if(this.#DIRECTION.RIGHT == fireDir){
+        tmpBullet.X = myTank.X + tankWH + 5;
+        tmpBullet.Y = myTank.Y + tankWH/2;
+        tmpTank.X = enTank.X-29;
+        tmpTank.Y = enTank.Y+15;
+        tmpTank.W = 29;
+        tmpTank.H = 20;
+      }
+
+      let isColTk = this.#checkSiteCollide(enTank.X, enTank.Y, tankWH-5, tankWH-5, tmpBullet.X+5, tmpBullet.Y+5, 10, 10);
+      let isColmin = this.#checkSiteCollide(tmpTank.X, tmpTank.Y, tmpTank.W, tmpTank.H, tmpBullet.X+5, tmpBullet.Y+5, 10, 10);
+      if(this.#DIRECTION.STOP != fireDir && (isColTk || isColmin)){
+        this.firetimestamp = (new Date()).valueOf();
+        this.#fire();
+        document.onkeyup(this.#fireEv);
+        return;
+      }else {
+        if(myBulletNum >= 4 ){
+          return;
+        }
+      }
+    }
+    if($.inArray(myTank.direction, fireDirs) < 0){
+      return;
+    }
     let mis = 100;
     let fireDis = 2000;
 
@@ -766,7 +851,7 @@ window.playerA = new (class PlayerControl {
   }
 
   //追击坦克
-  #attackTank(myTank, latelyTank, tankWH, bulletWH, bullets, myAiTanks, enTank, enBullets, alreadyTryDirs){
+  #attackTank(myTank, latelyTank, tankWH, bulletWH, bullets, myAiTanks, enTank, enBullets, alreadyTryDirs, myBullets){
 
     let moveDir = undefined;
     if(latelyTank == undefined){
@@ -774,100 +859,65 @@ window.playerA = new (class PlayerControl {
     }
 
     let site_R = 1.8*tankWH;
-    let site_L = 6.6*tankWH;
+    let site_L = 6.8*tankWH;
     let site_S = 1*tankWH;
     if(latelyTank === enTank){
       let step = this.#enTankNoFire(enBullets, bulletWH);
-      if(step > 10){
-        site_R = 0*tankWH;
+      site_R = 0*tankWH;
+      if(step > 10 || this.#forceTurn(myTank, enTank, myBullets, tankWH)){
         site_L = 0*tankWH;
         site_S = 0*tankWH;
-      }else if(step > 5){
-        site_R = 0*tankWH;
-        site_L = 5*tankWH;
-        site_S = 0*tankWH;
+      }else if(step > 6){
+        site_L = 3.2*tankWH;
+        site_S = 0;
       }else {
-        site_R = 0*tankWH;
-        site_L = 6*tankWH;
-        site_S = 0.5*tankWH;
+        site_L = 4.2*tankWH;
+        site_S = 25;
       }
     }
-
     let dis = this.#calcTwoPointDistance(myTank.X+tankWH/2, myTank.Y+tankWH/2, latelyTank.X+tankWH/2, latelyTank.Y+tankWH/2);
     if(dis < site_R || this.#isCalcCross(myTank, latelyTank, site_L, site_S, tankWH)){
       return moveDir;
     }
+    let amet = this.#isAmetalCol(myTank.X+tankWH/2, myTank.Y+tankWH/2, latelyTank.X+tankWH/2, latelyTank.Y+tankWH/2);
 
     let atkDisX = Math.abs(myTank.X - latelyTank.X);//横向差距
     let atkDisY = Math.abs(myTank.Y - latelyTank.Y);//纵向差距
-
     let moveDirArry = [];
-    if(myAiTanks.length > 5 || atkDisX > screenX/5){
-      if(myAiTanks.length > 5){
-        if(myTank.X<screenX/2){
-          myAiTanks.sort(function (a, b) { return b.X - a.X;});
-        }else {
-          myAiTanks.sort(function (a, b) { return a.X - b.X;});
-        }
-        latelyTank = myAiTanks[1];
+
+    if(amet != undefined){
+      if (myTank.X < latelyTank.X){
+        moveDirArry.push(this.#DIRECTION.DOWN);
+        moveDirArry.push(this.#DIRECTION.RIGHT);
       }else {
-        if(myTank.Y < 5*tankWH){
-          let n = Math.floor(Math.random()*2);
-          if(n == 0){
-            moveDirArry.push(this.#DIRECTION.DOWN);
-          }else {
-            if(myTank.X < latelyTank.X){
-              moveDirArry.push(this.#DIRECTION.RIGHT);
-            }else {
-              moveDirArry.push(this.#DIRECTION.LEFT);
-            }
-          }
+        moveDirArry.push(this.#DIRECTION.DOWN);
+        moveDirArry.push(this.#DIRECTION.LEFT);
+      }
+    }else if(myAiTanks.length >= 5) {
+      let dX = latelyTank.X;
+      let tankX;
+      let tankY = myAiTanks.sort(function (a, b) {return b.Y - a.Y;})[0];
+      if (myTank.X < screenX / 2) {
+        tankX = myAiTanks.sort(function (a, b) {
+          return b.X - a.X;
+        })[0];
+        if (tankX.X > tankY.Y) {
+          latelyTank = tankX;
+        } else {
+          latelyTank = tankY;
+        }
+      } else {
+        dX = latelyTank.X+tankWH;
+        tankX = myAiTanks.sort(function (a, b) {
+          return a.X - b.X;
+        })[0];
+        if (screenX - (tankX.X + tankWH) > tankY.Y) {
+          latelyTank = tankX;
+        } else {
+          latelyTank = tankY;
         }
       }
-      if(atkDisX > 30){
-        if(myTank.X > latelyTank.X){
-          moveDirArry.push(this.#DIRECTION.LEFT);
-        }else {
-          moveDirArry.push(this.#DIRECTION.RIGHT);
-        }
-        if(myTank.Y > latelyTank.Y){
-          moveDirArry.push(this.#DIRECTION.UP);
-        }else{
-          moveDirArry.push(this.#DIRECTION.DOWN);
-        }
-      }else if(atkDisY > 30){
-        if(myTank.Y > latelyTank.Y){
-          moveDirArry.push(this.#DIRECTION.UP);
-        }else {
-          moveDirArry.push(this.#DIRECTION.DOWN);
-        }
-        if(myTank.X > latelyTank.X){
-          moveDirArry.push(this.#DIRECTION.LEFT);
-        }else {
-          moveDirArry.push(this.#DIRECTION.RIGHT);
-        }
-      }
-    }else if(atkDisX > atkDisY){
-      if(atkDisY > 20){
-        if(myTank.Y > latelyTank.Y){
-          moveDirArry.push(this.#DIRECTION.UP);
-        }else {
-          moveDirArry.push(this.#DIRECTION.DOWN);
-        }
-        if(myTank.X > latelyTank.X){
-          moveDirArry.push(this.#DIRECTION.LEFT);
-        }else {
-          moveDirArry.push(this.#DIRECTION.RIGHT);
-        }
-      }else {
-        if(myTank.X > latelyTank.X){
-          moveDirArry.push(this.#DIRECTION.LEFT);
-        }else {
-          moveDirArry.push(this.#DIRECTION.RIGHT);
-        }
-      }
-    }else {
-      if (atkDisX > 20) {
+      if(dX > latelyTank.Y && atkDisX > 30){
         if (myTank.X > latelyTank.X) {
           moveDirArry.push(this.#DIRECTION.LEFT);
         } else {
@@ -878,11 +928,96 @@ window.playerA = new (class PlayerControl {
         } else {
           moveDirArry.push(this.#DIRECTION.DOWN);
         }
-      }else {
+      }else if(latelyTank.X < latelyTank.Y && atkDisY > 30){
         if (myTank.Y > latelyTank.Y) {
           moveDirArry.push(this.#DIRECTION.UP);
         } else {
           moveDirArry.push(this.#DIRECTION.DOWN);
+        }
+        if (myTank.X > latelyTank.X) {
+          moveDirArry.push(this.#DIRECTION.LEFT);
+        } else {
+          moveDirArry.push(this.#DIRECTION.RIGHT);
+        }
+      }
+    }else if(atkDisX > atkDisY){
+      if(latelyTank == enTank){
+        if(atkDisX > 20){
+          if(myTank.X > latelyTank.X){
+            moveDirArry.push(this.#DIRECTION.LEFT);
+          }else {
+            moveDirArry.push(this.#DIRECTION.RIGHT);
+          }
+          if(myTank.Y > latelyTank.Y){
+            moveDirArry.push(this.#DIRECTION.UP);
+          }else {
+            moveDirArry.push(this.#DIRECTION.DOWN);
+          }
+        }else {
+          if(myTank.Y > latelyTank.Y){
+            moveDirArry.push(this.#DIRECTION.UP);
+          }else {
+            moveDirArry.push(this.#DIRECTION.DOWN);
+          }
+        }
+      }else{
+        if(atkDisY > 20){
+          if(myTank.Y > latelyTank.Y){
+            moveDirArry.push(this.#DIRECTION.UP);
+          }else {
+            moveDirArry.push(this.#DIRECTION.DOWN);
+          }
+          if(myTank.X > latelyTank.X){
+            moveDirArry.push(this.#DIRECTION.LEFT);
+          }else {
+            moveDirArry.push(this.#DIRECTION.RIGHT);
+          }
+        }else {
+          if(myTank.X > latelyTank.X){
+            moveDirArry.push(this.#DIRECTION.LEFT);
+          }else {
+            moveDirArry.push(this.#DIRECTION.RIGHT);
+          }
+        }
+      }
+    }else {
+      if(latelyTank == enTank){
+        if (atkDisY > 20) {
+          if (myTank.Y > latelyTank.Y) {
+            moveDirArry.push(this.#DIRECTION.UP);
+          } else {
+            moveDirArry.push(this.#DIRECTION.DOWN);
+          }
+          if (myTank.X > latelyTank.X) {
+            moveDirArry.push(this.#DIRECTION.LEFT);
+          } else {
+            moveDirArry.push(this.#DIRECTION.RIGHT);
+          }
+        }else {
+          if (myTank.X > latelyTank.X) {
+            moveDirArry.push(this.#DIRECTION.LEFT);
+          } else {
+            moveDirArry.push(this.#DIRECTION.RIGHT);
+          }
+        }
+      }else {
+        if (atkDisX > 20) {
+          if (myTank.X > latelyTank.X) {
+            moveDirArry.push(this.#DIRECTION.LEFT);
+          } else {
+            moveDirArry.push(this.#DIRECTION.RIGHT);
+          }
+          if (myTank.Y > latelyTank.Y) {
+            moveDirArry.push(this.#DIRECTION.UP);
+          } else {
+            moveDirArry.push(this.#DIRECTION.DOWN);
+          }
+        }else {
+          if (myTank.Y > latelyTank.Y) {
+            moveDirArry.push(this.#DIRECTION.UP);
+          } else {
+            moveDirArry.push(this.#DIRECTION.DOWN);
+          }
         }
       }
     }
@@ -957,6 +1092,9 @@ window.playerA = new (class PlayerControl {
 
   //十字相交判断
   #isCalcCross(myTank, latelyTank, siteLong, siteShort, tankWH){
+    if(siteLong == 0 && siteShort == 0){
+      return false;
+    }
     if(this.#checkSiteCollide(myTank.X+tankWH/2-siteLong/2, myTank.Y+tankWH/2-siteShort/2, siteLong, siteShort, latelyTank.X, latelyTank.Y, tankWH, tankWH)
         || this.#checkSiteCollide(myTank.X+tankWH/2-siteShort/2, myTank.Y+tankWH/2-siteLong/2, siteShort, siteLong, latelyTank.X, latelyTank.Y, tankWH, tankWH)){
       return true;
@@ -1019,5 +1157,89 @@ window.playerA = new (class PlayerControl {
       edgeDis = tmpEdgeDis < edgeDis ? tmpEdgeDis : edgeDis;
     }
     return edgeDis/10;
+  }
+
+  #isAmetalCol(ax, ay, bx, by){
+    let tankA = new Object();
+    tankA.x = ax;
+    tankA.y = ay;
+    let tankB = new Object();
+    tankB.x = bx;
+    tankB.y = by;
+    for(let amet of ametal){
+      let amtC = new Object();
+      let amtD = new Object();
+      amtC.x = amet[0];
+      amtC.y = amet[1];
+      amtD.x = amet[0] + amet[2]+5;
+      amtD.y = amet[1] + amet[3]+5;
+      if(this.#checkLineIsCol(tankA, tankB, amtC, amtD)){
+        return amet;
+      }
+      amtC.x = amet[0] + amet[2]+5;
+      amtC.y = amet[1] + amet[3]+5;
+      if(this.#checkLineIsCol(tankA, tankB, amtC, amtD)){
+        return amet;
+      }
+      amtD.x = amet[0];
+      amtD.y = amet[1] + amet[3]+5;
+      if(this.#checkLineIsCol(tankA, tankB, amtC, amtD)){
+        return amet;
+      }
+      amtD.x = amet[0];
+      amtD.y = amet[1] + amet[3]+5;
+      if(this.#checkLineIsCol(tankA, tankB, amtC, amtD)){
+        return amet;
+      }
+      amtC.x = amet[0];
+      amtC.y = amet[1];
+      if(this.#checkLineIsCol(tankA, tankB, amtC, amtD)){
+        return amet;
+      }
+    }
+    return undefined;
+  }
+
+  //线段是否相交
+  #checkLineIsCol(a, b, c, d){
+    if(Math.max(a.x, b.x)<Math.min(c.x, d.x)) return false;
+    if(Math.max(a.y, b.y)<Math.min(c.y, d.y)) return false;
+    if(Math.max(c.x, d.x)<Math.min(a.x, b.x)) return false;
+    if(Math.max(c.y, d.y)<Math.min(a.y, b.y)) return false;
+    if(this.#mult(c, d, a)*this.#mult(c, d, b)>0){
+      return false;
+    }
+    if(this.#mult(a, b, c)*this.#mult(a, b, d)>0){
+      return false;
+    }
+    return true;
+  }
+  //叉积
+  #mult(a, b, c){
+    return ((b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y));
+  }
+
+  //强制转身
+  #forceTurn(myTank, enTank, myBullets, tankWH){
+    let c = (new Date()).valueOf();
+    if (c - this.firetimestamp < 60 || myBullets.length > 5) {
+      return false;
+    }
+    if(myTank.X > enTank.X && myTank.direction == this.#DIRECTION.LEFT){
+      return false;
+    }else if(myTank.X < enTank.X && myTank.direction == this.#DIRECTION.RIGHT){
+      return false;
+    }
+    if(myTank.Y > enTank.Y && myTank.direction == this.#DIRECTION.UP){
+      return false;
+    }else if(myTank.Y < enTank.Y && myTank.direction == this.#DIRECTION.DOWN){
+      return false;
+    }
+    //let isCol = this.#isCalcCross(myTank, enTank, 5.8*tankWH, 0.6*tankWH, tankWH);
+    let isCol = this.#checkSiteCollide(myTank.X, myTank.Y, tankWH, tankWH, enTank.X, enTank.Y, tankWH, tankWH);
+    if(!isCol){
+      return false;
+    }
+    return true;
   }
 })("A");
