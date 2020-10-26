@@ -1,0 +1,156 @@
+Received: from BJMAIL11.sohu-inc.com (10.2.166.167) by BJMAIL11.sohu-inc.com
+ (10.2.166.167) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id 15.1.1979.3 via Mailbox
+ Transport; Fri, 16 Oct 2020 17:23:32 +0800
+Received: from BJHUB1.sohu-inc.com (10.2.166.116) by BJMAIL11.sohu-inc.com
+ (10.2.166.167) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id 15.1.1979.3; Fri, 16
+ Oct 2020 17:23:32 +0800
+Received: from smtp8.sohu-inc.com (10.16.39.219) by BJHUB1.sohu-inc.com
+ (10.2.166.116) with Microsoft SMTP Server id 15.1.1979.3 via Frontend
+ Transport; Fri, 16 Oct 2020 17:23:32 +0800
+X-AuditID: 6fca7e85-f73ff70000028c4f-2e-5f89668fc46a
+Received: from m1328.mail.163.com ( [220.181.13.28])
+	by smtp8.sohu-inc.com (Mail Gateway) with SMTP id 5B.F4.35919.F86698F5; Fri, 16 Oct 2020 17:23:29 +0800 (HKT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
+	s=s110527; h=Date:From:Subject:MIME-Version:Message-ID; bh=0x0xv
+	Qh8vHIdd++5xUNXOo46jJK/5Z/4mMWE6bUj+b4=; b=peV455BzKe6bW5YcWs7W+
+	W0pFd+eSJ5dsSaX0cadI8P+9j3xTIRuKflC1lgvuTa5b65z9ugYH9zwxGqT7nslX
+	tBRfv+OL3RvmqKgUP99JLjxJrVYIrJHlMHdx+X9Ot/y3WsXe06Dezea8T10r4OT3
+	XDBsnQlZoB+4XTdsKWWefI=
+Received: from 15355495503$163.com ( [123.126.70.234] ) by
+ ajax-webmail-wmsvr28 (Coremail) ; Fri, 16 Oct 2020 17:23:27 +0800 (CST)
+X-Originating-IP: [123.126.70.234]
+Date: Fri, 16 Oct 2020 17:23:27 +0800 (CST)
+From: =?GBK?B?y9W729Do?= <15355495503@163.com>
+To: <tdc-ppm@sohu-inc.com>
+Subject: =?GBK?Q?AI=CC=B9=BF=CB=B4=F3=D5=BD_-_T34_?=
+ =?GBK?Q?-_=CB=D5=BB=DB=D0=E8_-_=B5=DA=D2=BB=B4=CE=CC=E1=BD=BB?=
+X-Priority: 3
+X-Mailer: Coremail Webmail Server Version XT5.0.10 build 20190724(ac680a23)
+ Copyright (c) 2002-2020 www.mailtech.cn 163com
+X-CM-CTRLDATA: htMLLmZvb3Rlcl9odG09MjIzODo2MSZsaW5rQXR0YWNoZWQ9MQ==
+MIME-Version: 1.0
+Message-ID: <3821a6fd.3ccc.17530b89f05.Coremail.15355495503@163.com>
+X-Coremail-Locale: zh_CN
+X-CM-TRANSID: HMGowAB31qqPZolfwXBWAA--.61059W
+X-CM-SenderInfo: zprvjkyvuzkkmqtbiqqrwthudrp/xtbBLw2-mlUMOSOtXAABs0
+X-Coremail-Antispam: 1U5529EdanIXcx71UUUUU7vcSsGvfC2KfnxnUU==
+X-Brightmail-Tracker: H4sIAAAAAAAAA21Ue0xTdxTmtBWutRevLeih4JxFGVPxtZlgpsTFbppsfxAXksU9pJQL7YSW
+	9YHgnDCQYkUzNtTwkPfDwZgKiGMydTYVX0tAkaqA84Gy4Ws6JWAqut/tLbQu++fku993f+d8
+	v3POvZRQuneKnGLTTKxBp0pS+IpF/a10SMR3CdYNi7vK/SOHe53CVbD2akU3RMN68Yp4Nkmb
+	yhoWRcWKNZd6rMKU4yFp1wZiMuH34B0wmULmbey/dVmwA8SUlKkBzB84MIl7EDGDAsy7UCfk
+	lW2AOYXDQv6IAjNPjAGHRcx8rP9+VMRhX2YhWod/cfEBDOL9f/ZP4rCMScVvT+wX8WdpLMy9
+	48Zb8GxPGfB4NZ4+/RvBFCVkPsWhKykcTTPT8GzRbRGPlXiv5bEv/zriz0NdbjsL8FzRmN94
+	mof1VyfxeCVeH8r1ywdZsSdrsVdWDguZuVhsrRHyeDbuzrvpx+M5uMv5ALz5CvBtAGlcmlqn
+	XmjUa8wRWgLU+uRmIFPQn9ua0waNdY8W2kBAgQ0SKYEikF61wLpB6h+nj0/XqIyaDQZzEmtU
+	BNCV8YSmJ+g4c9JGhZwO5VjZBKtjNxmTWBOZNNHmSl7RjOa4ZK3RqNXrbICUkKS8G2whKeNV
+	6ZtZg54vZINgSqSYQev8yVkmUWViN7JsCmsYVzMoirE4zo+CXKTT61gF0mWcg2kGNpFNS9Am
+	mcZfJTlEJdtJDm/FZXomLUsmwnRvwcv3TBp8fHxelb2tC6jJNlBTEuJfznItMaaoko3aRHdZ
+	Gf2OmrCScdZVMog+xrmUjpNe5YL4chOSp9Q5qAWqzl5WJaT6G2pIfOyKI65Y08RFe2ktiQ57
+	+Y9Cqasf8hm0gyvPcOk0Zt1EO+TT6do75NZTvQTOmjyEDgojfKAX73FHVMeV/6geg+Nf8kWY
+	KZfx15CQUSVrTe5euPVbMI164if1FQs2axgZP7i7sI+sHOnWS64xEq3O5GmhlP6Su8MUN+nq
+	INJL47g5uzmvBiIdJvFSPPaWHgUKmCHA3X98E4DNzx4EYU/7SyUe7T65Bg/n3PwY27OyYrFm
+	pC0BizuPJ+JfztJk3D14z4yN1aNmfF5wPgvQ2dlLfiTN3WO5gB0NT/MAh21je8hP5+iBIsBb
+	lYUlgPdb9pQD9o/urAJsqi9uBJKg7TBg9qWCY4BZ1RdPAd6xH+gAbN92oxPQZnnoABztLekD
+	/MFZcY/wfS8tAvx17EalAA+NXGsW3CUrJiAr1lu0nVsxk8rkvWKbeizcirlZ94rNcFi4FXOT
+	/7dibsnTInmmYP2ZG0/+DC6S1KvJzq8xRcbYz3Qdm1dXe7j1ycF9X/dtmdXu+Cowp78somdq
+	RmlsykcPlveJhw4e6aqsXtYX3hp9Qhl4ISahwBmW/QabkTM7pfn22rc+qdt1ih0IWnSNynvU
+	9lrY3KkR6xqvFsQmtFq2J7xIhdiBbv+dZScrUq3dpbhizmD2/ojQkMViKIhMbxGHLluDyuH5
+	oUbL06q69bOiD6VGXe9874tFlt7XGzTPDsX7zHtRCuuUwaAd2Tp9xQeqEaWTSjeUfN704S59
+	4+qomp8GPxOEd2ZdfnS5dK85P8JHqT6ysvu5PSN7uaVHE66UvXtlyTP73+0dZ99MDEl9/3a4
+	VSEyalRL5gkNRtW/tZ1XMqkGAAA=
+Return-Path: 15355495503@163.com
+X-MS-Exchange-Organization-Network-Message-Id: 75196500-63ef-4199-c2df-08d871b52693
+X-MS-Exchange-Organization-AuthSource: BJHUB1.sohu-inc.com
+X-MS-Exchange-Organization-AuthAs: Anonymous
+X-MS-Exchange-Transport-EndToEndLatency: 00:00:00.0636304
+X-MS-Exchange-Processed-By-BccFoldering: 15.01.1979.006
+Content-type: multipart/alternative;
+	boundary="B_3686584860_1313141120"
+
+> This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+--B_3686584860_1313141120
+Content-type: text/plain;
+	charset="UTF-8"
+Content-transfer-encoding: quoted-printable
+
+
+=E4=BB=8E=E7=BD=91=E6=98=93163=E9=82=AE=E7=AE=B1=E5=8F=91=E6=9D=A5=E7=9A=84=E4=BA=91=E9=99=84=E4=BB=B6
+AI=E5=9D=A6=E5=85=8B=E5=A4=A7=E6=88=98-T34-=E8=8B=8F=E6=85=A7=E9=9C=80-=E7=AC=AC=E4=B8=80=E6=AC=A1=E6=8F=90=E4=BA=A4.rar  (70.45M, 2020=E5=B9=B410=E6=9C=8831=E6=97=
+=A5 17:22 =E5=88=B0=E6=9C=9F)
+=E4=B8=8B=E8=BD=BD
+
+
+
+
+=20
+
+
+--B_3686584860_1313141120
+Content-type: text/html;
+	charset="UTF-8"
+Content-transfer-encoding: quoted-printable
+
+<html>
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8">
+</head>
+<body>
+<div style=3D"line-height:1.7;color:#000000;font-size:14px;font-family:Arial"=
+>
+<p style=3D"margin:0;"><br>
+</p>
+</div>
+<div id=3D"divNeteaseBigAttach" style=3D"clear:both;margin-top:10px;margin-bott=
+om:15px;background:#DEE8F2;padding:4px;font-family:verdana,Arial,Helvetica,s=
+ans-serif">
+<div style=3D"font-size:14px;padding:4px 8px 8px 8px;line-height:16px"><b>=E4=BB=8E=
+=E7=BD=91=E6=98=93163=E9=82=AE=E7=AE=B1=E5=8F=91=E6=9D=A5=E7=9A=84=E4=BA=91=E9=99=84=E4=BB=B6</b></div>
+<div style=3D"background:#fff;padding:4px">
+<div style=3D"clear:both;height:36px;padding:6px 4px">
+<div style=3D"float:left;width:36px"><a href=3D"http://fs.163.com/fs/display/?p=
+=3DX-NETEASE-HUGE-ATTACHMENT&amp;file=3DB56bHoLYlhPBzqUxjuiqwyE4MlqxYgczjuQlMZlS=
+Vsxoa7GI0Fg_nY7s1GkWHIgDlBYEFArtNXwS7uQt-io4xA&amp;title=3DAI%E5%9D%A6%E5%85%8=
+B%E5%A4%A7%E6%88%98%20-%20T34%20-%20%E8%8B%8F%E6%85%A7%E9%9C%80%20-%20%E7%AC=
+%AC%E4%B8%80%E6%AC%A1%E6%8F%90%E4%BA%A4"><img border=3D"0" src=3D"https://mimg.1=
+27.net/xm/all/fj/ico-bfile-6.gif"></a></div>
+<div>
+<div style=3D"padding:0px;font-size:12px;line-height:14px"><a href=3D"http://fs=
+.163.com/fs/display/?p=3DX-NETEASE-HUGE-ATTACHMENT&amp;file=3DB56bHoLYlhPBzqUxju=
+iqwyE4MlqxYgczjuQlMZlSVsxoa7GI0Fg_nY7s1GkWHIgDlBYEFArtNXwS7uQt-io4xA&amp;tit=
+le=3DAI%E5%9D%A6%E5%85%8B%E5%A4%A7%E6%88%98%20-%20T34%20-%20%E8%8B%8F%E6%85%A7=
+%E9%9C%80%20-%20%E7%AC%AC%E4%B8%80%E6%AC%A1%E6%8F%90%E4%BA%A4" download=3D"htt=
+p://fs.163.com/fs/display/?p=3DX-NETEASE-HUGE-ATTACHMENT&amp;file=3DB56bHoLYlhPB=
+zqUxjuiqwyE4MlqxYgczjuQlMZlSVsxoa7GI0Fg_nY7s1GkWHIgDlBYEFArtNXwS7uQt-io4xA&a=
+mp;title=3DAI%E5%9D%A6%E5%85%8B%E5%A4%A7%E6%88%98%20-%20T34%20-%20%E8%8B%8F%E6=
+%85%A7%E9%9C%80%20-%20%E7%AC%AC%E4%B8%80%E6%AC%A1%E6%8F%90%E4%BA%A4" preview=
+fileid=3D"undefined" filename=3D"AI=E5=9D=A6=E5=85=8B=E5=A4=A7=E6=88=98-T34-=E8=8B=8F=E6=85=A7=E9=9C=80-=E7=AC=AC=E4=B8=80=E6=AC=A1=E6=8F=90=E4=BA=A4.ra=
+r" filesize=3D"73868853" expiretime=3D"1604136178856" target=3D"_blank" style=3D"col=
+or:#000;text-decoration:none">AI=E5=9D=A6=E5=85=8B=E5=A4=A7=E6=88=98-T34-=E8=8B=8F=E6=85=A7=E9=9C=80-=E7=AC=AC=E4=B8=80=E6=AC=A1=E6=8F=90=E4=BA=A4.r=
+ar</a><span style=3D"color:#bbb">
+ (70.45M, 2020=E5=B9=B410=E6=9C=8831=E6=97=A5 17:22 =E5=88=B0=E6=9C=9F)</span></div>
+<div style=3D"padding:4px 0px;font-size:12px;line-height:14px"><a href=3D"http:=
+//fs.163.com/fs/display/?p=3DX-NETEASE-HUGE-ATTACHMENT&amp;file=3DB56bHoLYlhPBzq=
+UxjuiqwyE4MlqxYgczjuQlMZlSVsxoa7GI0Fg_nY7s1GkWHIgDlBYEFArtNXwS7uQt-io4xA&amp=
+;title=3DAI%E5%9D%A6%E5%85%8B%E5%A4%A7%E6%88%98%20-%20T34%20-%20%E8%8B%8F%E6%8=
+5%A7%E9%9C%80%20-%20%E7%AC%AC%E4%B8%80%E6%AC%A1%E6%8F%90%E4%BA%A4">=E4=B8=8B=E8=BD=BD</a=
+></div>
+</div>
+</div>
+</div>
+</div>
+<br>
+<br>
+<span title=3D"neteasefooter">
+<p><br>
+&nbsp;</p>
+</span>
+</body>
+</html>
+
+
+--B_3686584860_1313141120--
+
